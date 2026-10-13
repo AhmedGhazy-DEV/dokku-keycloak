@@ -241,6 +241,24 @@ teardown_file() {
   [[ -n "$(admin_token)" ]]
 }
 
+@test "(e2e) restart and start remove a docker link that came back" {
+  local link_option="--link dokku.postgres.$E2E_APP-db:dokku-postgres-$E2E_APP-db"
+
+  dokku docker-options:add "$E2E_APP" build,deploy,run "$link_option"
+  run dokku keycloak:restart "$E2E_APP"
+  assert_success
+  run dokku docker-options:report "$E2E_APP"
+  refute_output_contains "--link"
+
+  dokku keycloak:stop "$E2E_APP"
+  dokku docker-options:add "$E2E_APP" build,deploy,run "$link_option"
+  run dokku keycloak:start "$E2E_APP"
+  assert_success
+  run dokku docker-options:report "$E2E_APP"
+  refute_output_contains "--link"
+  [[ -n "$(admin_token)" ]]
+}
+
 @test "(e2e) upgrade backs up the database and keeps realms" {
   run dokku keycloak:upgrade "$E2E_APP"
   assert_success
