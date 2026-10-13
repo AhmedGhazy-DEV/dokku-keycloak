@@ -27,19 +27,19 @@ fn-keycloak-help-content() {
   cat <<help_content
     keycloak:admin-credentials <name>, Print the bootstrap admin username and password
     keycloak:config:get <name> <KEY>, Print one Keycloak setting
-    keycloak:config:set <name> KEY=VALUE... [--no-restart], Set Keycloak settings (KC_*, JAVA_OPTS*) and apply them
+    keycloak:config:set <name> KEY=VALUE... [--no-restart], Set Keycloak settings (KC_* and JAVA_OPTS*) and apply them
     keycloak:config:unset <name> KEY... [--no-restart], Remove Keycloak settings and apply the change
     keycloak:create <name> [--version <tag>] [--memory <limit>], Create a Keycloak instance with its own PostgreSQL database
     keycloak:destroy <name> [--force], Destroy a Keycloak instance and its database
     keycloak:domains:set <name> <domain> [<domain>...], Set the domains of an instance and pin Keycloak's hostname to the first
     keycloak:export <name> [<realm>], Export one realm (or all) as JSON on stdout
-    keycloak:import <name> <file|-> [--override], Import realms from a JSON export, then restart
+    keycloak:import <name> <file|-> [--override], Import realms from a JSON export and restart
     keycloak:info <name>, Show details about a Keycloak instance
     keycloak:letsencrypt <name> [--email <email>], Enable Let's Encrypt TLS for an instance
     keycloak:list, List Keycloak instances
     keycloak:logs <name> [-t] [-n <lines>], Show the logs of a Keycloak instance
-    keycloak:restart <name>, Restart a Keycloak instance
-    keycloak:upgrade <name> [--version <tag>] [--force], Back up the database, then move an instance to another Keycloak release
+    keycloak:restart <name>, Restart an instance (rebuilding if build-time options changed)
+    keycloak:upgrade <name> [--version <tag>] [--force], Back up the database and move an instance to another Keycloak release
     keycloak:start <name>, Start a stopped Keycloak instance
     keycloak:stop <name>, Stop a running Keycloak instance
 help_content
