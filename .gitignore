@@ -1,0 +1,11 @@
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local test artifacts
+tmp/
+*.log
+*.dump
+*.realm.json
