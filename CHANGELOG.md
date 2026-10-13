@@ -30,4 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suites (bats) and a GitHub Actions workflow running them against
   Dokku in Docker.
 
+### Fixed
+
+- `keycloak:create` no longer prints the database password; the output of
+  `postgres:create` and `postgres:link` contained it twice.
+- Keycloak now runs as PID 1 in its container, so it no longer warns that
+  graceful shutdown may not work.
+- `keycloak:create` deploys once instead of twice. The admin user is created
+  with `kc.sh bootstrap-admin`, reading the password from stdin, so it is
+  never part of the app's config or a container's environment.
+- Each instance gets its own Docker network (`keycloak-<name>`) shared with
+  its database, so Docker no longer warns about links on the default bridge.
+- Keycloak's deprecated sticky-session route is disabled, removing its
+  startup warning.
+
 [Unreleased]: https://github.com/shebang-labs/dokku-keycloak/commits/main
