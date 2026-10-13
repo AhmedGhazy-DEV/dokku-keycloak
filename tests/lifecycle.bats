@@ -94,8 +94,11 @@ teardown_file() {
 }
 
 @test "(e2e) Keycloak and its database share a private network, without bridge links" {
-  run dokku network:report "$E2E_APP" --network-initial-network
+  run dokku network:report "$E2E_APP" --network-attach-post-create
   [[ "$output" == "keycloak-$E2E_APP" ]]
+
+  run dokku docker-options:report "$E2E_APP"
+  refute_output_contains "--link"
 
   run docker inspect -f '{{json .NetworkSettings.Networks}}' "dokku.postgres.$E2E_APP-db"
   assert_output_contains "\"keycloak-$E2E_APP\""
