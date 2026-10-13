@@ -133,3 +133,15 @@ load test_helper
   assert_failure
   assert_output_contains "--version requires a value"
 }
+
+@test "(keycloak:help) every entry has exactly one comma separating usage from description" {
+  # the help table is split on commas, so a comma inside a description
+  # breaks its columns
+  source "$BATS_TEST_DIRNAME/../help-functions"
+  run fn-keycloak-help-content
+  assert_success
+  local line
+  while IFS= read -r line; do
+    [[ "$(tr -cd ',' <<<"$line")" == "," ]] || { echo "bad help line: $line" >&2; return 1; }
+  done <<<"$output"
+}
