@@ -86,3 +86,18 @@ load test_helper
   assert_success
   refute_output_contains "$TEST_APP-plain"
 }
+
+@test "(lifecycle) every instance command rejects an unknown instance" {
+  local subcommand
+  for subcommand in start stop restart logs destroy; do
+    run dokku "keycloak:$subcommand" does-not-exist
+    assert_failure
+    assert_output_contains "Keycloak instance does-not-exist does not exist"
+  done
+}
+
+@test "(keycloak:destroy) rejects unknown flags" {
+  run dokku keycloak:destroy does-not-exist --yes
+  assert_failure
+  assert_output_contains "Unknown flag: --yes"
+}
