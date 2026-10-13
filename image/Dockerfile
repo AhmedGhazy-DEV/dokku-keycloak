@@ -14,7 +14,8 @@ RUN set -a && . /tmp/build.env && set +a && /opt/keycloak/bin/kc.sh build
 FROM ${KEYCLOAK_IMAGE}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY docker-entrypoint.sh /opt/keycloak/bin/dokku-entrypoint.sh
-# Dokku reads app.json from the image WORKDIR (/opt/keycloak) for image deploys.
-COPY app.json /opt/keycloak/app.json
+# Dokku reads app.json from the image WORKDIR for image deploys; upstream
+# leaves WORKDIR at /.
+COPY app.json /app.json
 ENTRYPOINT ["/opt/keycloak/bin/dokku-entrypoint.sh"]
 CMD ["start", "--optimized"]
