@@ -1,5 +1,8 @@
 # dokku-keycloak
 
+[![CI](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml/badge.svg)](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A [Dokku](https://dokku.com) plugin that provisions and manages
 [Keycloak](https://www.keycloak.org) end to end: a production-mode Keycloak
 backed by its own PostgreSQL database, with a generated admin password,
@@ -60,14 +63,27 @@ Maintained by [Shebang Labs](https://shebanglabs.io).
 | Requirement          | Version / notes                                                                 |
 | -------------------- | ------------------------------------------------------------------------------- |
 | Dokku                | **0.36.0 or newer** (tested on 0.36.0 and 0.38.31)                              |
-| Host OS              | Any Dokku-supported Ubuntu or Debian release                                    |
+| Host OS              | Ubuntu 24.04 tested; other Dokku-supported Ubuntu and Debian releases should work |
 | Memory               | 2 GB per instance by default, plus PostgreSQL and the host (4 GB host minimum)  |
 | dokku-postgres       | Required. `sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres` |
 | dokku-letsencrypt    | Required for `keycloak:letsencrypt`. `sudo dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git letsencrypt` |
-| Keycloak             | 26.0.0 or newer. The default is **26.8.1**.                                     |
+| Keycloak             | **26.8.1** by default; 26.8.0 also tested. Other 26.x releases are accepted but untested. |
 
 The plugin never installs other plugins for you. If one is missing, the
 command that needs it fails and prints the exact install command.
+
+### Verification status
+
+Every command is covered by the test suites, which pass on Dokku 0.36.0 and
+0.38.31 running on Ubuntu 24.04 (arm64). Two things are **not yet verified**
+on a real server:
+
+- **Let's Encrypt issuance.** The `keycloak:letsencrypt` checks and error
+  handling are tested, and TLS behind Dokku's nginx is tested with a
+  self-signed certificate. A real certificate from Let's Encrypt has not been
+  requested yet.
+- **x86_64 hosts.** All testing so far ran on arm64. The plugin is plain Bash
+  and the Keycloak image is multi-architecture, so no difference is expected.
 
 ## Installation
 
@@ -205,7 +221,7 @@ valid certificate exists. Set the domain with `keycloak:domains:set` first.
 
 ```sh
 dokku keycloak:config:set auth KC_LOG_LEVEL=INFO,org.keycloak.events:DEBUG
-dokku keycloak:config:set auth KC_FEATURES=token-exchange,admin-fine-grained-authz
+dokku keycloak:config:set auth KC_FEATURES=token-exchange
 dokku keycloak:config:get auth KC_LOG_LEVEL
 dokku keycloak:config:unset auth KC_LOG_LEVEL
 ```
@@ -213,8 +229,9 @@ dokku keycloak:config:unset auth KC_LOG_LEVEL
 - Only `KC_*` and `JAVA_OPTS*` keys are accepted. Use `dokku config:set` for
   anything else.
 - `KC_DB` cannot be changed, because the image is built for PostgreSQL.
-- Values are never printed back, so secrets such as SMTP or LDAP passwords
-  are safe to set.
+- `config:set` and `config:unset` print key names only, never values, so
+  secrets such as SMTP or LDAP passwords are safe to set. `config:get`
+  prints the one value you ask for.
 - Setting a value that is already in place does nothing.
 - [Build-time options](#build-time-and-runtime-options) rebuild the image
   and redeploy. All other options restart the instance. Both are zero-downtime.
@@ -295,7 +312,14 @@ removes `/health/ready`, which the deploy healthcheck relies on.
 
 ### Host-wide settings
 
-Set these in the `dokku` user's environment (for example `/etc/environment`):
+Set these in a file under `/home/dokku/.dokkurc/`, which Dokku reads before
+every command:
+
+```sh
+echo 'export KEYCLOAK_IMAGE_REPO=registry.example.com/keycloak/keycloak' | sudo tee /home/dokku/.dokkurc/keycloak
+sudo chown dokku:dokku /home/dokku/.dokkurc/keycloak
+```
+
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
