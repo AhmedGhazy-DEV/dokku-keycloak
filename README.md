@@ -218,7 +218,7 @@ valid certificate exists. Set the domain with `keycloak:domains:set` first.
 
 ```sh
 dokku keycloak:config:set auth KC_LOG_LEVEL=INFO,org.keycloak.events:DEBUG
-dokku keycloak:config:set auth KC_FEATURES=token-exchange,admin-fine-grained-authz
+dokku keycloak:config:set auth KC_FEATURES=token-exchange
 dokku keycloak:config:get auth KC_LOG_LEVEL
 dokku keycloak:config:unset auth KC_LOG_LEVEL
 ```
@@ -226,8 +226,9 @@ dokku keycloak:config:unset auth KC_LOG_LEVEL
 - Only `KC_*` and `JAVA_OPTS*` keys are accepted. Use `dokku config:set` for
   anything else.
 - `KC_DB` cannot be changed, because the image is built for PostgreSQL.
-- Values are never printed back, so secrets such as SMTP or LDAP passwords
-  are safe to set.
+- `config:set` and `config:unset` print key names only, never values, so
+  secrets such as SMTP or LDAP passwords are safe to set. `config:get`
+  prints the one value you ask for.
 - Setting a value that is already in place does nothing.
 - [Build-time options](#build-time-and-runtime-options) rebuild the image
   and redeploy. All other options restart the instance. Both are zero-downtime.
