@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-letsencrypt() {
+  declare desc="enables Let's Encrypt TLS for a Keycloak instance"
+  declare cmd="keycloak:letsencrypt"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" EMAIL=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --email)
+        [[ -n "$2" ]] || dokku_log_fail "--email requires a value"
+        EMAIL="$2"
+        shift 2
+        ;;
+      -*) dokku_log_fail "Unknown flag: $1" ;;
+      *)
+        APP="$1"
+        shift
+        ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  fn-keycloak-require-plugin letsencrypt
+
+  [[ -z "$EMAIL" ]] || dokku letsencrypt:set "$APP" email "$EMAIL"
+  if [[ -z "$(dokku letsencrypt:report "$APP" --letsencrypt-computed-email 2>/dev/null)" ]]; then
+    dokku_log_fail "Let's Encrypt needs a contact email. Re-run with --email you@example.com, or set one globally with: dokku letsencrypt:set --global email you@example.com"
+  fi
+  if [[ -z "$(dokku config:get "$APP" KC_HOSTNAME || true)" ]]; then
+    dokku_log_warn "No Keycloak hostname is pinned yet. Run 'dokku keycloak:domains:set $APP <domain>' so tokens use the public name."
+  fi
+
+  # letsencrypt:enable skips the request when a valid certificate exists.
+  dokku letsencrypt:enable "$APP"
+}
+
+cmd-keycloak-letsencrypt "$@"
