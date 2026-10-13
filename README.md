@@ -416,7 +416,8 @@ header and Dokku's nginx adds one when TLS is enabled. Browsers use the
 first. To keep only Keycloak's, run `dokku nginx:set <name> hsts false`.
 
 **Debugging the plugin.** Prefix a command with `dokku --trace` to print
-every step.
+every step. Trace output includes configuration values such as the admin and
+database passwords, so do not share it unedited.
 
 ## How it works
 
