@@ -126,3 +126,10 @@ fn-keycloak-deploy() {
   dokku git:from-image "$APP" "$image"
   fn-keycloak-prune-images "$APP" "$image"
 }
+
+fn-keycloak-cleanup() {
+  declare desc="removes plugin state and build images for an instance"
+  declare APP="$1"
+  fn-plugin-property-destroy "$KEYCLOAK_PLUGIN_NAME" "$APP"
+  fn-keycloak-prune-images "$APP" ""
+}

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-logs() {
+  declare desc="shows the logs of a Keycloak instance"
+  declare cmd="keycloak:logs"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1"
+  [[ $# -gt 0 ]] && shift 1
+
+  verify_keycloak_name "$APP"
+  # remaining flags (-t, -n NUM, ...) go straight to dokku logs
+  dokku logs "$@" "$APP"
+}
+
+cmd-keycloak-logs "$@"

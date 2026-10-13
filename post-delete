@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+trigger-keycloak-post-delete() {
+  declare desc="forgets an instance whose app was removed with apps:destroy"
+  declare trigger="post-delete"
+  declare APP="$1"
+  local database
+
+  fn-keycloak-exists "$APP" || return 0
+  database="$(fn-keycloak-get "$APP" database)"
+  fn-keycloak-cleanup "$APP"
+
+  # The database is never removed implicitly; it holds every realm and user.
+  if dokku postgres:exists "$database" >/dev/null 2>&1; then
+    dokku_log_warn "The Keycloak database $database was kept. Remove it with: dokku postgres:destroy $database"
+  fi
+}
+
+trigger-keycloak-post-delete "$@"
