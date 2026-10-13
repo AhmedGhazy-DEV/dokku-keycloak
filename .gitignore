@@ -9,3 +9,10 @@ tmp/
 *.log
 *.dump
 *.realm.json
+
+# Keys, certificates and env files made while testing TLS or SMTP locally
+*.key
+*.crt
+*.pem
+.env
+.env.*
