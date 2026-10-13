@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
+KEYCLOAK_PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$KEYCLOAK_PLUGIN_ROOT/config"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 set -eo pipefail
@@ -50,4 +51,78 @@ fn-keycloak-require-plugin() {
   declare desc="fails with an install hint unless the given plugin is enabled"
   declare PLUGIN="$1"
   [[ -d "$PLUGIN_ENABLED_PATH/$PLUGIN" ]] || dokku_log_fail "The $PLUGIN plugin is required. Install it with: $(fn-keycloak-plugin-install-hint "$PLUGIN")"
+}
+
+fn-keycloak-validate-version() {
+  declare desc="fails unless the tag is safe to use and new enough"
+  declare VERSION="$1"
+
+  [[ "$VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || dokku_log_fail "Invalid Keycloak version: $VERSION"
+  # bootstrap admin variables and the management port need Keycloak 26
+  if [[ "$VERSION" =~ ^([0-9]+)\. ]] && [[ "${BASH_REMATCH[1]}" -lt 26 ]]; then
+    dokku_log_fail "Keycloak $VERSION is not supported; use 26.0.0 or newer"
+  fi
+}
+
+fn-keycloak-is-build-option() {
+  declare desc="returns 0 when a config key must be applied with kc.sh build"
+  declare KEY="$1"
+  local pattern
+  for pattern in $KEYCLOAK_BUILD_OPTIONS; do
+    # shellcheck disable=SC2053 # the pattern is a glob on purpose
+    [[ "$KEY" == $pattern ]] && return 0
+  done
+  return 1
+}
+
+fn-keycloak-build-env() {
+  declare desc="prints the instance's build-time options as a sourceable file"
+  declare APP="$1"
+  local key
+  for key in $(dokku config:keys "$APP" 2>/dev/null); do
+    fn-keycloak-is-build-option "$key" || continue
+    printf '%s=%q\n' "$key" "$(dokku config:get "$APP" "$key")"
+  done
+}
+
+fn-keycloak-build-image() {
+  declare desc="builds the optimized Keycloak image for an instance and prints its tag"
+  declare APP="$1"
+  local version context image_id tag
+
+  version="$(fn-keycloak-get "$APP" version)"
+  context="$(mktemp -d)"
+  cp "$KEYCLOAK_PLUGIN_ROOT/image/"* "$context/"
+  fn-keycloak-build-env "$APP" >"$context/build.env"
+
+  dokku_log_info1 "Building Keycloak $version image (the first build downloads ~500 MB)" >&2
+  if ! image_id="$("$DOCKER_BIN" image build --quiet --build-arg "KEYCLOAK_IMAGE=$KEYCLOAK_IMAGE_REPO:$version" "$context")"; then
+    rm -rf "$context"
+    dokku_log_fail "Failed to build the Keycloak image for $APP"
+  fi
+  rm -rf "$context"
+
+  # Tagging by image id makes rebuilding unchanged inputs a no-op deploy.
+  tag="dokku-keycloak/$APP:$version-${image_id:7:12}"
+  "$DOCKER_BIN" image tag "$image_id" "$tag"
+  echo "$tag"
+}
+
+fn-keycloak-prune-images() {
+  declare desc="removes build tags for an instance other than the one given"
+  declare APP="$1" KEEP="$2"
+  local tag
+  for tag in $("$DOCKER_BIN" image ls "dokku-keycloak/$APP" --format '{{.Repository}}:{{.Tag}}'); do
+    [[ "$tag" == "$KEEP" ]] || "$DOCKER_BIN" image rm "$tag" >/dev/null 2>&1 || true
+  done
+}
+
+fn-keycloak-deploy() {
+  declare desc="builds and deploys the instance's Keycloak image"
+  declare APP="$1"
+  local image
+
+  image="$(fn-keycloak-build-image "$APP")"
+  dokku git:from-image "$APP" "$image"
+  fn-keycloak-prune-images "$APP" "$image"
 }

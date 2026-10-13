@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-create() {
+  declare desc="creates a Keycloak instance backed by its own PostgreSQL database"
+  declare cmd="keycloak:create"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" VERSION="" MEMORY=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --version)
+        [[ -n "$2" ]] || dokku_log_fail "--version requires a value"
+        VERSION="$2"
+        shift 2
+        ;;
+      --memory)
+        [[ -n "$2" ]] || dokku_log_fail "--memory requires a value"
+        MEMORY="$2"
+        shift 2
+        ;;
+      -*) dokku_log_fail "Unknown flag: $1" ;;
+      *)
+        [[ -z "$APP" ]] || dokku_log_fail "Unexpected argument: $1"
+        APP="$1"
+        shift
+        ;;
+    esac
+  done
+
+  [[ -n "$APP" ]] || dokku_log_fail "Please specify a name for the Keycloak instance"
+  is_valid_app_name "$APP"
+  fn-keycloak-require-plugin postgres
+
+  # Flags win; a resumed create otherwise keeps what it was started with.
+  VERSION="${VERSION:-$(fn-keycloak-get "$APP" version "$KEYCLOAK_DEFAULT_VERSION")}"
+  MEMORY="${MEMORY:-$(fn-keycloak-get "$APP" memory "$KEYCLOAK_DEFAULT_MEMORY")}"
+  fn-keycloak-validate-version "$VERSION"
+  [[ "$MEMORY" =~ ^[0-9]+[bkmg]?$ ]] || dokku_log_fail "Invalid memory limit: $MEMORY (examples: 2048m, 2g)"
+
+  # A finished instance is never touched again; a half-created one (for
+  # example after a failed image download) is resumed from where it stopped.
+  if fn-keycloak-exists "$APP"; then
+    [[ "$(fn-keycloak-get "$APP" created)" != "true" ]] || dokku_log_fail "Keycloak instance $APP already exists"
+    dokku_log_info1 "Resuming creation of Keycloak instance $APP"
+  else
+    if dokku apps:exists "$APP" >/dev/null 2>&1; then
+      dokku_log_fail "App $APP already exists and is not a Keycloak instance"
+    fi
+    dokku_log_info1 "Creating Keycloak instance $APP"
+    # dots are valid in app names but not in service names
+    fn-keycloak-set "$APP" database "${APP//./-}-db"
+    fn-keycloak-set "$APP" admin-password "$(od -An -tx1 -N24 /dev/urandom | tr -d ' \n')"
+  fi
+  fn-keycloak-set "$APP" version "$VERSION"
+  fn-keycloak-set "$APP" memory "$MEMORY"
+
+  local database
+  database="$(fn-keycloak-get "$APP" database)"
+
+  dokku apps:exists "$APP" >/dev/null 2>&1 || dokku apps:create "$APP"
+  dokku postgres:exists "$database" >/dev/null 2>&1 || dokku postgres:create "$database"
+  dokku postgres:linked "$database" "$APP" >/dev/null 2>&1 || dokku postgres:link --no-restart "$database" "$APP"
+
+  # Output is discarded because config:set echoes values, including the
+  # bootstrap password. The bootstrap variables are removed after first boot.
+  dokku config:set --no-restart "$APP" \
+    KC_PROXY_HEADERS=xforwarded \
+    KC_HTTP_ENABLED=true \
+    KC_HOSTNAME_STRICT=false \
+    KC_BOOTSTRAP_ADMIN_USERNAME="$KEYCLOAK_ADMIN_USER" \
+    KC_BOOTSTRAP_ADMIN_PASSWORD="$(fn-keycloak-get "$APP" admin-password)" >/dev/null
+
+  # Only the HTTP listener is published; the management port (health and
+  # metrics) stays reachable from the host and other containers only.
+  dokku ports:set "$APP" http:80:8080
+  dokku resource:limit --memory "$(fn-keycloak-get "$APP" memory)" "$APP" >/dev/null
+
+  fn-keycloak-deploy "$APP"
+
+  # The deploy healthcheck waits for readiness, which happens after the admin
+  # user is created, so the password is no longer needed. The restart (zero
+  # downtime, healthchecked) drops it from the running container's env too.
+  dokku config:unset --no-restart "$APP" KC_BOOTSTRAP_ADMIN_USERNAME KC_BOOTSTRAP_ADMIN_PASSWORD >/dev/null
+  dokku ps:restart "$APP"
+  fn-keycloak-set "$APP" created true
+
+  dokku_log_info1 "Keycloak instance $APP is ready"
+  dokku_log_verbose "Admin console: $(dokku url "$APP")/admin/"
+  dokku_log_verbose "Credentials:   dokku keycloak:admin-credentials $APP"
+}
+
+cmd-keycloak-create "$@"

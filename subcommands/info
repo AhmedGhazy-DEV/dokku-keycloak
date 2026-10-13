@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-info() {
+  declare desc="shows details about a Keycloak instance"
+  declare cmd="keycloak:info"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1"
+  local url
+
+  verify_keycloak_name "$APP"
+  url="$(dokku url "$APP" 2>/dev/null || true)"
+
+  dokku_log_info2_quiet "$APP keycloak information"
+  fn-keycloak-info-row "Version" "$(fn-keycloak-get "$APP" version)"
+  fn-keycloak-info-row "Created" "$(fn-keycloak-get "$APP" created false)"
+  fn-keycloak-info-row "Running" "$(dokku ps:report "$APP" --running 2>/dev/null || echo false)"
+  fn-keycloak-info-row "Database" "$(fn-keycloak-get "$APP" database)"
+  fn-keycloak-info-row "Memory limit" "$(fn-keycloak-get "$APP" memory)"
+  fn-keycloak-info-row "Hostname" "$(dokku config:get "$APP" KC_HOSTNAME || true)"
+  fn-keycloak-info-row "URL" "$url"
+  fn-keycloak-info-row "Admin console" "${url:+$url/admin/}"
+  fn-keycloak-info-row "Admin user" "$KEYCLOAK_ADMIN_USER"
+}
+
+fn-keycloak-info-row() {
+  declare desc="prints one aligned info row"
+  declare LABEL="$1" VALUE="$2"
+  dokku_log_verbose "$(printf '%-16s%s' "$LABEL:" "$VALUE")"
+}
+
+cmd-keycloak-info "$@"
