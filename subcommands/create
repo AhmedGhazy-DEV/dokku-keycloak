@@ -57,15 +57,21 @@ cmd-keycloak-create() {
   fn-keycloak-set "$APP" version "$VERSION"
   fn-keycloak-set "$APP" memory "$MEMORY"
 
-  local database
+  local database network
   database="$(fn-keycloak-get "$APP" database)"
+  network="$(fn-keycloak-get "$APP" network "keycloak-${APP//./-}")"
 
+  # Keycloak and its database share a private network: postgres:link then
+  # works without links on Docker's default bridge, which are deprecated.
+  fn-keycloak-set "$APP" network "$network"
+  dokku network:exists "$network" >/dev/null 2>&1 || dokku network:create "$network" >/dev/null
   dokku apps:exists "$APP" >/dev/null 2>&1 || dokku apps:create "$APP"
+  dokku network:set "$APP" initial-network "$network" >/dev/null
   # Both commands print the database URL, password included, on stdout;
   # errors still reach the user on stderr.
   if ! dokku postgres:exists "$database" >/dev/null 2>&1; then
     dokku_log_info1 "Creating PostgreSQL service $database"
-    dokku postgres:create "$database" >/dev/null
+    dokku postgres:create "$database" --initial-network "$network" >/dev/null
   fi
   if ! dokku postgres:linked "$database" "$APP" >/dev/null 2>&1; then
     dokku_log_info1 "Linking $database to $APP"

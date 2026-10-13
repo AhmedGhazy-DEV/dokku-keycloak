@@ -8,7 +8,7 @@ cmd-keycloak-destroy() {
   declare cmd="keycloak:destroy"
   [[ "$1" == "$cmd" ]] && shift 1
   declare APP="" FORCE="${DOKKU_APPS_FORCE_DELETE:-}"
-  local arg database answer
+  local arg database network answer
 
   for arg in "$@"; do
     case "$arg" in
@@ -20,6 +20,7 @@ cmd-keycloak-destroy() {
 
   verify_keycloak_name "$APP"
   database="$(fn-keycloak-get "$APP" database)"
+  network="$(fn-keycloak-get "$APP" network)"
 
   if [[ -z "$FORCE" ]]; then
     dokku_log_warn "WARNING: Potentially Destructive Action"
@@ -40,6 +41,10 @@ cmd-keycloak-destroy() {
   fi
   if dokku apps:exists "$APP" >/dev/null 2>&1; then
     dokku --force apps:destroy "$APP"
+  fi
+  # instances created before networks were introduced have none
+  if [[ -n "$network" ]] && dokku network:exists "$network" >/dev/null 2>&1; then
+    dokku --force network:destroy "$network" >/dev/null
   fi
   fn-keycloak-cleanup "$APP"
   dokku_log_info1 "Keycloak instance $APP destroyed"

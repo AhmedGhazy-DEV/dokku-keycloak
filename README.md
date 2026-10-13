@@ -170,7 +170,8 @@ dokku keycloak:create auth --version 26.8.1 --memory 3g
 
 This command:
 
-- creates the app `<name>` and the PostgreSQL service `<name>-db`, and links them
+- creates the app `<name>` and the PostgreSQL service `<name>-db` on a private
+  Docker network `keycloak-<name>`, and links them
 - applies the defaults listed under [Configuration](#configuration)
 - builds the optimized image and deploys it
 - creates the temporary admin user with `kc.sh bootstrap-admin` in a one-off
@@ -191,7 +192,8 @@ dokku keycloak:destroy auth          # asks you to type the name
 dokku keycloak:destroy auth --force  # no prompt, for scripts
 ```
 
-This removes the app, its database and every realm and user in it. Export
+This removes the app, its database, its network and every realm and user in
+it. Export
 what you need first. Backups made by `keycloak:upgrade` are kept. If the app
 is removed with plain `dokku apps:destroy`, the plugin forgets the instance
 but leaves the database in place, and prints how to remove it.
@@ -299,6 +301,7 @@ See [Upgrading](#upgrading).
 | `KC_HOSTNAME` | first domain from `domains:set` | Stable issuer and redirect URLs |
 | Port mapping | `http:80:8080` (`https:443:8080` added by Let's Encrypt) | Only the HTTP listener is published |
 | Deploy healthcheck | `/health/ready` on port 9000 | Traffic switches only once Keycloak is ready |
+| Network | `keycloak-<name>` | Keycloak and its database share a private network, so nothing relies on links on Docker's default bridge |
 | `DATABASE_URL` | set by `postgres:link` | Turned into `KC_DB_URL`/`KC_DB_USERNAME`/`KC_DB_PASSWORD` when the container starts |
 
 To use an external database, set `KC_DB_URL`, `KC_DB_USERNAME` and

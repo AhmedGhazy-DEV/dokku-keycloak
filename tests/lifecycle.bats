@@ -93,6 +93,17 @@ teardown_file() {
   [[ "$output" == "404" ]]
 }
 
+@test "(e2e) Keycloak and its database share a private network, without bridge links" {
+  run dokku network:report "$E2E_APP" --network-initial-network
+  [[ "$output" == "keycloak-$E2E_APP" ]]
+
+  run docker inspect -f '{{json .NetworkSettings.Networks}}' "dokku.postgres.$E2E_APP-db"
+  assert_output_contains "\"keycloak-$E2E_APP\""
+
+  run cat "$BATS_FILE_TMPDIR/create.log"
+  refute_output_contains "default bridge network are deprecated"
+}
+
 @test "(e2e) create deploys exactly once" {
   run grep -c "Application deployed" "$BATS_FILE_TMPDIR/create.log"
   [[ "$output" == "1" ]]
@@ -223,6 +234,8 @@ teardown_file() {
   run dokku keycloak:destroy "$E2E_APP" --force
   assert_success
   run dokku postgres:exists "$E2E_APP-db"
+  assert_failure
+  run dokku network:exists "keycloak-$E2E_APP"
   assert_failure
   run dokku keycloak:list
   refute_output_contains "$E2E_APP"
