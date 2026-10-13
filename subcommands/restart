@@ -4,13 +4,13 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 cmd-keycloak-restart() {
-  declare desc="restarts a Keycloak instance"
+  declare desc="restarts a Keycloak instance, rebuilding it if build-time options changed"
   declare cmd="keycloak:restart"
   [[ "$1" == "$cmd" ]] && shift 1
   declare APP="$1"
 
   verify_keycloak_name "$APP"
-  dokku ps:restart "$APP"
+  fn-keycloak-apply "$APP"
 }
 
 cmd-keycloak-restart "$@"

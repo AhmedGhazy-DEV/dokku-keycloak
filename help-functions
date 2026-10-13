@@ -26,6 +26,9 @@ fn-keycloak-help-content() {
   declare desc="return help content"
   cat <<help_content
     keycloak:admin-credentials <name>, Print the bootstrap admin username and password
+    keycloak:config:get <name> <KEY>, Print one Keycloak setting
+    keycloak:config:set <name> KEY=VALUE... [--no-restart], Set Keycloak settings (KC_*, JAVA_OPTS*) and apply them
+    keycloak:config:unset <name> KEY... [--no-restart], Remove Keycloak settings and apply the change
     keycloak:create <name> [--version <tag>] [--memory <limit>], Create a Keycloak instance with its own PostgreSQL database
     keycloak:destroy <name> [--force], Destroy a Keycloak instance and its database
     keycloak:domains:set <name> <domain> [<domain>...], Set the domains of an instance and pin Keycloak's hostname to the first
