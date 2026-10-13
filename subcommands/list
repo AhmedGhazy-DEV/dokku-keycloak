@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-list() {
+  declare desc="lists Keycloak instances"
+  declare cmd="keycloak:list"
+  [[ "$1" == "$cmd" ]] && shift 1
+  local app
+
+  dokku_log_info2_quiet "Keycloak instances"
+  # dokku_apps fails when there are no apps at all, which is just an empty list
+  for app in $(dokku_apps 2>/dev/null || true); do
+    fn-keycloak-exists "$app" && echo "$app"
+  done
+  return 0
+}
+
+cmd-keycloak-list "$@"

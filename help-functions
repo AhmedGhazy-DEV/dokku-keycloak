@@ -25,5 +25,8 @@ cmd-keycloak-help() {
 fn-keycloak-help-content() {
   declare desc="return help content"
   cat <<help_content
+    keycloak:create <name> [--version <tag>] [--memory <limit>], Create a Keycloak instance with its own PostgreSQL database
+    keycloak:info <name>, Show details about a Keycloak instance
+    keycloak:list, List Keycloak instances
 help_content
 }
