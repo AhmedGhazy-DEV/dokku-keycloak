@@ -1,5 +1,8 @@
 # dokku-keycloak
 
+[![CI](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml/badge.svg)](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A [Dokku](https://dokku.com) plugin that provisions and manages
 [Keycloak](https://www.keycloak.org) end to end: a production-mode Keycloak
 backed by its own PostgreSQL database, with a generated admin password,
