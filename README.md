@@ -150,7 +150,7 @@ regular `dokku` command (`ps:report`, `logs`, `domains:report`,
 | `keycloak:logs <name> [-t] [-n <lines>]` | Show logs (`-t` to follow) |
 | `keycloak:admin-credentials <name>` | Print the bootstrap admin username and password |
 | `keycloak:domains:set <name> <domain> [<domain>...]` | Set domains and pin Keycloak's hostname to the first |
-| `keycloak:letsencrypt <name> [--email <email>]` | Enable Let's Encrypt TLS |
+| `keycloak:letsencrypt <name> [--email <email>] [--force]` | Enable Let's Encrypt TLS |
 | `keycloak:config:set <name> KEY=VALUE... [--no-restart]` | Set `KC_*` / `JAVA_OPTS*` options and apply them |
 | `keycloak:config:get <name> <KEY>` | Print one option |
 | `keycloak:config:unset <name> KEY... [--no-restart]` | Remove options and apply the change |
@@ -210,12 +210,24 @@ no change here. Re-running with the same first domain does not restart.
 
 ```sh
 dokku keycloak:letsencrypt auth --email ops@example.com
+dokku keycloak:letsencrypt auth --force    # replace a certificate that is still valid
 ```
 
 `--email` is stored for the app. Without it, an app or global letsencrypt
 email (`dokku letsencrypt:set --global email ...`) must already be set,
-otherwise the command explains how to set one. Requests are skipped while a
-valid certificate exists. Set the domain with `keycloak:domains:set` first.
+otherwise the command explains how to set one. Set the domain with
+`keycloak:domains:set` first.
+
+Requests are skipped while a valid certificate exists. `--force` requests a
+new one anyway. Use it after testing against the Let's Encrypt staging
+server, whose certificates browsers do not trust:
+
+```sh
+dokku letsencrypt:set auth server https://acme-staging-v02.api.letsencrypt.org/directory
+dokku keycloak:letsencrypt auth --email ops@example.com     # staging certificate
+dokku letsencrypt:set auth server                           # back to production
+dokku keycloak:letsencrypt auth --force                     # replace it
+```
 
 ### `keycloak:config:*`
 
@@ -422,7 +434,8 @@ to pass it through.
 **`keycloak:letsencrypt` fails.** Let's Encrypt must reach the domain on
 port 80 from the internet, so check the DNS record and firewall. The
 detailed log is in the command output. The request is not repeated while a
-valid certificate exists.
+valid certificate exists; add `--force` to replace it, for example a staging
+certificate.
 
 **`Cannot read <file> as the dokku user`.** Stream the file:
 `dokku keycloak:import <name> - < <file>`.

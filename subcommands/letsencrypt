@@ -7,7 +7,7 @@ cmd-keycloak-letsencrypt() {
   declare desc="enables Let's Encrypt TLS for a Keycloak instance"
   declare cmd="keycloak:letsencrypt"
   [[ "$1" == "$cmd" ]] && shift 1
-  declare APP="" EMAIL=""
+  declare APP="" EMAIL="" FORCE=""
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -15,6 +15,10 @@ cmd-keycloak-letsencrypt() {
         [[ -n "$2" ]] || dokku_log_fail "--email requires a value"
         EMAIL="$2"
         shift 2
+        ;;
+      --force)
+        FORCE="--force"
+        shift
         ;;
       -*) dokku_log_fail "Unknown flag: $1" ;;
       *)
@@ -35,8 +39,10 @@ cmd-keycloak-letsencrypt() {
     dokku_log_warn "No Keycloak hostname is pinned yet. Run 'dokku keycloak:domains:set $APP <domain>' so tokens use the public name."
   fi
 
-  # letsencrypt:enable skips the request when a valid certificate exists.
-  dokku letsencrypt:enable "$APP"
+  # letsencrypt:enable skips the request when a valid certificate exists;
+  # --force requests a new one anyway, e.g. after switching away from the
+  # staging server.
+  dokku letsencrypt:enable "$APP" ${FORCE:+"$FORCE"}
 }
 
 cmd-keycloak-letsencrypt "$@"

@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `keycloak:stop`, `keycloak:restart` and `keycloak:logs`.
 - `keycloak:admin-credentials`, the only command that prints the password.
 - `keycloak:domains:set` pins Keycloak's hostname to the public domain, and
-  `keycloak:letsencrypt` enables TLS through dokku-letsencrypt.
+  `keycloak:letsencrypt` enables TLS through dokku-letsencrypt. Its `--force`
+  flag replaces a certificate that is still valid, such as one from the
+  staging server.
 - `keycloak:config:set`, `config:get` and `config:unset` for `KC_*` and
   `JAVA_OPTS*` settings. Build-time options trigger an image rebuild.
 - `keycloak:export` and `keycloak:import` for realm JSON, including over ssh
