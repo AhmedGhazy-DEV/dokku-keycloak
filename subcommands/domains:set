@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-domains-set() {
+  declare desc="sets the domains of a Keycloak instance and pins its hostname"
+  declare cmd="keycloak:domains:set"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1"
+  [[ $# -gt 0 ]] && shift 1
+
+  verify_keycloak_name "$APP"
+  [[ $# -gt 0 ]] || dokku_log_fail "Please specify at least one domain"
+
+  dokku domains:set "$APP" "$@"
+
+  # Keycloak issues tokens and redirects for the first domain only. No scheme
+  # is given, so http/https follows the X-Forwarded-Proto header from nginx
+  # and enabling TLS later needs no change here.
+  if [[ "$(dokku config:get "$APP" KC_HOSTNAME || true)" == "$1" ]] \
+    && [[ "$(dokku config:get "$APP" KC_HOSTNAME_STRICT || true)" == "true" ]]; then
+    dokku_log_info1 "Keycloak hostname is already $1"
+    return 0
+  fi
+  dokku config:set "$APP" KC_HOSTNAME="$1" KC_HOSTNAME_STRICT=true
+}
+
+cmd-keycloak-domains-set "$@"

@@ -89,7 +89,7 @@ load test_helper
 
 @test "(lifecycle) every instance command rejects an unknown instance" {
   local subcommand
-  for subcommand in start stop restart logs destroy admin-credentials; do
+  for subcommand in start stop restart logs destroy admin-credentials domains:set letsencrypt; do
     run dokku "keycloak:$subcommand" does-not-exist
     assert_failure
     assert_output_contains "Keycloak instance does-not-exist does not exist"
@@ -100,4 +100,14 @@ load test_helper
   run dokku keycloak:destroy does-not-exist --yes
   assert_failure
   assert_output_contains "Unknown flag: --yes"
+}
+
+@test "(keycloak:letsencrypt) rejects unknown flags and an empty email" {
+  run dokku keycloak:letsencrypt does-not-exist --staging
+  assert_failure
+  assert_output_contains "Unknown flag: --staging"
+
+  run dokku keycloak:letsencrypt does-not-exist --email
+  assert_failure
+  assert_output_contains "--email requires a value"
 }
