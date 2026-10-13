@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-restart() {
+  declare desc="restarts a Keycloak instance"
+  declare cmd="keycloak:restart"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1"
+
+  verify_keycloak_name "$APP"
+  dokku ps:restart "$APP"
+}
+
+cmd-keycloak-restart "$@"
