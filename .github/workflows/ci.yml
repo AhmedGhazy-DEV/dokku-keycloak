@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck
+        run: make lint
+
+  test:
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest supported release and the current stable one
+        dokku: ["0.36.0", "0.38.31"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start Mailpit
+        run: docker run -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit:v1.31.5
+
+      - name: Start Dokku ${{ matrix.dokku }} with the plugin installed
+        run: tests/dokku-in-docker.sh "${{ matrix.dokku }}"
+
+      - name: Command tests
+        run: docker exec dokku bash -c 'cd /tmp/dokku-keycloak && make test'
+
+      - name: End-to-end lifecycle tests
+        run: >-
+          docker exec
+          --env KEYCLOAK_TEST_MAILPIT_API=http://172.17.0.1:8025
+          dokku bash -c 'cd /tmp/dokku-keycloak && make test-e2e'
+
+      - name: Dokku logs on failure
+        if: failure()
+        run: docker logs --tail 200 dokku
