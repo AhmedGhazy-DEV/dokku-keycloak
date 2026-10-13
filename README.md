@@ -457,6 +457,22 @@ stop signals on to Keycloak, so shutdowns stay graceful.
 header and Dokku's nginx adds one when TLS is enabled. Browsers use the
 first. To keep only Keycloak's, run `dokku nginx:set <name> hsts false`.
 
+**A deploy fails with `not attached to default bridge network`.** A docker
+link to the database came back, for example after `dokku postgres:unlink`
+and `dokku postgres:link`. The database is only on the instance's private
+network, so containers with the link cannot start; the running container
+keeps serving. `postgres:link` restarts the app itself, and that restart
+fails while the command still exits 0. Fix it with:
+
+```sh
+dokku keycloak:restart <name>
+```
+
+`keycloak:restart`, `keycloak:start`, `keycloak:upgrade` and the
+`keycloak:config:*` commands remove the stray link before starting
+containers. When re-linking on purpose, pass `--no-restart` to
+`postgres:link` and then run `keycloak:restart`.
+
 **Debugging the plugin.** Prefix a command with `dokku --trace` to print
 every step. Trace output includes configuration values such as the admin and
 database passwords, so do not share it unedited.

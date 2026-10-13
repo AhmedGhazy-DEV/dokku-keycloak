@@ -45,5 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   startup warning.
 - Config commands no longer report a set key as missing at random, and
   instances deploy on Docker-based Dokku installs and on Dokku 0.36.
+- `keycloak:restart`, `start`, `upgrade` and the config commands remove a
+  docker link to the database that came back (for example after a manual
+  re-link), instead of failing to start the new container.
 
 [Unreleased]: https://github.com/shebang-labs/dokku-keycloak/commits/main
