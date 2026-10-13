@@ -48,6 +48,8 @@ setup_file() {
 
 teardown_file() {
   dokku keycloak:destroy "$E2E_APP" --force >/dev/null 2>&1 || true
+  # destroy keeps pre-upgrade backups on purpose; the test's are disposable
+  rm -rf "${DOKKU_LIB_ROOT:-/var/lib/dokku}/data/keycloak/$E2E_APP"
   dokku letsencrypt:set "$E2E_APP" email >/dev/null 2>&1 || true
 }
 
