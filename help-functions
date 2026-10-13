@@ -25,6 +25,7 @@ cmd-keycloak-help() {
 fn-keycloak-help-content() {
   declare desc="return help content"
   cat <<help_content
+    keycloak:admin-credentials <name>, Print the bootstrap admin username and password
     keycloak:create <name> [--version <tag>] [--memory <limit>], Create a Keycloak instance with its own PostgreSQL database
     keycloak:destroy <name> [--force], Destroy a Keycloak instance and its database
     keycloak:info <name>, Show details about a Keycloak instance
