@@ -145,3 +145,11 @@ load test_helper
     [[ "$(tr -cd ',' <<<"$line")" == "," ]] || { echo "bad help line: $line" >&2; return 1; }
   done <<<"$output"
 }
+
+@test "(keycloak:letsencrypt) accepts --force" {
+  # reaching the instance check proves the flag parsed
+  run dokku keycloak:letsencrypt does-not-exist --email ops@example.com --force
+  assert_failure
+  refute_output_contains "Unknown flag"
+  assert_output_contains "Keycloak instance does-not-exist does not exist"
+}
