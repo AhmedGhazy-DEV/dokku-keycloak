@@ -301,7 +301,7 @@ See [Upgrading](#upgrading).
 | `KC_HOSTNAME` | first domain from `domains:set` | Stable issuer and redirect URLs |
 | Port mapping | `http:80:8080` (`https:443:8080` added by Let's Encrypt) | Only the HTTP listener is published |
 | Deploy healthcheck | `/health/ready` on port 9000 | Traffic switches only once Keycloak is ready |
-| Network | `keycloak-<name>` | Keycloak and its database share a private network, so nothing relies on links on Docker's default bridge |
+| Network | `keycloak-<name>` | The database is reached over a private network instead of a deprecated docker link. The app also stays on the default bridge so Dokku's nginx can reach it, including on Docker-based Dokku installs |
 | `DATABASE_URL` | set by `postgres:link` | Turned into `KC_DB_URL`/`KC_DB_USERNAME`/`KC_DB_PASSWORD` when the container starts |
 
 To use an external database, set `KC_DB_URL`, `KC_DB_USERNAME` and
