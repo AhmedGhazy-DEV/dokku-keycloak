@@ -171,3 +171,29 @@ fn-keycloak-apply-config() {
   fi
   fn-keycloak-apply "$APP"
 }
+
+fn-keycloak-oneoff() {
+  declare desc="runs a bash script in a throwaway container of the instance, with stdin attached"
+  declare APP="$1" SCRIPT="$2"
+  shift 2
+  local container status=0
+
+  # dokku run only attaches stdin when there is a TTY, so a detached
+  # container (same image, env and database link) is driven via docker exec.
+  # The TTL makes Dokku reap it even if this command is interrupted.
+  container="$(dokku run:detached --ttl-seconds 3600 "$APP" /bin/sleep 3600 2>/dev/null | tail -n1)"
+  [[ -n "$container" ]] || dokku_log_fail "Could not start a one-off container for $APP"
+
+  # The entrypoint maps DATABASE_URL to KC_DB_*. KC_CACHE=local keeps the
+  # one-off Keycloak from joining the running node's cluster.
+  "$DOCKER_BIN" container exec -i --env KC_CACHE=local "$container" \
+    /opt/keycloak/bin/dokku-entrypoint.sh /bin/bash -c "$SCRIPT" keycloak "$@" || status=$?
+  "$DOCKER_BIN" container rm -f "$container" >/dev/null 2>&1 || true
+  return "$status"
+}
+
+fn-keycloak-validate-realm() {
+  declare desc="fails unless the realm name is safe to pass to kc.sh"
+  declare REALM="$1"
+  [[ "$REALM" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || dokku_log_fail "Invalid realm name: $REALM"
+}

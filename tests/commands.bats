@@ -89,7 +89,7 @@ load test_helper
 
 @test "(lifecycle) every instance command rejects an unknown instance" {
   local subcommand
-  for subcommand in start stop restart logs destroy admin-credentials domains:set letsencrypt config:set config:get config:unset; do
+  for subcommand in start stop restart logs destroy admin-credentials domains:set letsencrypt config:set config:get config:unset export import; do
     run dokku "keycloak:$subcommand" does-not-exist
     assert_failure
     assert_output_contains "Keycloak instance does-not-exist does not exist"
@@ -116,4 +116,10 @@ load test_helper
   run dokku keycloak:config:set does-not-exist KC_LOG_LEVEL=INFO --restart-now
   assert_failure
   assert_output_contains "Unknown flag: --restart-now"
+}
+
+@test "(keycloak:import) rejects unknown flags" {
+  run dokku keycloak:import does-not-exist realm.json --merge
+  assert_failure
+  assert_output_contains "Unknown flag: --merge"
 }
