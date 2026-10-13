@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-upgrade() {
+  declare desc="upgrades a Keycloak instance after backing up its database"
+  declare cmd="keycloak:upgrade"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" VERSION="$KEYCLOAK_DEFAULT_VERSION" FORCE=false
+  local current database backup_dir backup
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --version)
+        [[ -n "$2" ]] || dokku_log_fail "--version requires a value"
+        VERSION="$2"
+        shift 2
+        ;;
+      --force)
+        FORCE=true
+        shift
+        ;;
+      -*) dokku_log_fail "Unknown flag: $1" ;;
+      *)
+        APP="$1"
+        shift
+        ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  fn-keycloak-validate-version "$VERSION"
+  current="$(fn-keycloak-get "$APP" version)"
+  database="$(fn-keycloak-get "$APP" database)"
+
+  if [[ "$VERSION" == "$current" ]]; then
+    dokku_log_info1 "$APP already runs Keycloak $current"
+    return 0
+  fi
+  # Keycloak migrates the schema forward only; an older release cannot read it.
+  if [[ "$(printf '%s\n' "$current" "$VERSION" | sort -V | head -n1)" == "$VERSION" ]] && [[ "$FORCE" != "true" ]]; then
+    dokku_log_fail "Refusing to downgrade $APP from $current to $VERSION: Keycloak cannot run on a newer schema. Restore a pre-upgrade backup instead, or pass --force"
+  fi
+
+  backup_dir="$KEYCLOAK_DATA_ROOT/$APP/backups"
+  backup="$backup_dir/$database-$current-$(date +%Y%m%d%H%M%S).dump"
+  mkdir -p "$backup_dir"
+  chmod 700 "$KEYCLOAK_DATA_ROOT/$APP" "$backup_dir"
+  dokku_log_info1 "Backing up database $database to $backup"
+  if ! dokku postgres:export "$database" >"$backup"; then
+    rm -f "$backup"
+    dokku_log_fail "Database backup failed; upgrade aborted"
+  fi
+  chmod 600 "$backup"
+
+  dokku_log_info1 "Upgrading $APP from Keycloak $current to $VERSION"
+  fn-keycloak-set "$APP" version "$VERSION"
+  if ! (fn-keycloak-apply "$APP"); then
+    fn-keycloak-set "$APP" version "$current"
+    dokku_log_warn "Upgrade failed. If Keycloak $current no longer starts, restore the backup with:"
+    dokku_log_warn "  dokku postgres:import $database < $backup && dokku keycloak:restart $APP"
+    dokku_log_fail "Upgrade of $APP to $VERSION failed"
+  fi
+  dokku_log_info1 "$APP now runs Keycloak $VERSION (backup kept at $backup)"
+}
+
+cmd-keycloak-upgrade "$@"

@@ -43,6 +43,9 @@ cmd-keycloak-destroy() {
   fi
   fn-keycloak-cleanup "$APP"
   dokku_log_info1 "Keycloak instance $APP destroyed"
+  if [[ -d "$KEYCLOAK_DATA_ROOT/$APP/backups" ]]; then
+    dokku_log_verbose "Pre-upgrade backups were kept in $KEYCLOAK_DATA_ROOT/$APP/backups"
+  fi
 }
 
 cmd-keycloak-destroy "$@"

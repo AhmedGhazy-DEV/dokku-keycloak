@@ -4,10 +4,13 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 trigger-keycloak-install() {
-  declare desc="prepares the plugin property store"
+  declare desc="prepares the property store and the data directory for backups"
   declare trigger="install"
 
   fn-plugin-property-setup "$KEYCLOAK_PLUGIN_NAME"
+  mkdir -p "$KEYCLOAK_DATA_ROOT"
+  chown "${DOKKU_SYSTEM_USER:-dokku}:${DOKKU_SYSTEM_GROUP:-dokku}" "$KEYCLOAK_DATA_ROOT"
+  chmod 700 "$KEYCLOAK_DATA_ROOT"
 }
 
 trigger-keycloak-install "$@"

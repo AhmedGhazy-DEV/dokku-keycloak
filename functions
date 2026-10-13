@@ -131,9 +131,10 @@ fn-keycloak-apply() {
 
   # Runtime-only changes cost a restart; version or build-time option
   # changes a rebuild and a healthchecked deploy.
-  build_hash="$(fn-keycloak-build-hash "$APP")"
+  # Explicit returns: callers may run this where errexit is suspended.
+  build_hash="$(fn-keycloak-build-hash "$APP")" || return 1
   if [[ "$build_hash" == "$(fn-keycloak-get "$APP" build-hash)" ]]; then
-    dokku ps:restart "$APP"
+    dokku ps:restart "$APP" || return 1
     return 0
   fi
 
@@ -141,8 +142,8 @@ fn-keycloak-apply() {
   # which would turn the retry of a deploy that failed its healthcheck into
   # a silent no-op.
   tag="dokku-keycloak/$APP:$(fn-keycloak-get "$APP" version)-$(date +%s)"
-  fn-keycloak-build-image "$APP" "$tag"
-  dokku git:from-image "$APP" "$tag"
+  fn-keycloak-build-image "$APP" "$tag" || return 1
+  dokku git:from-image "$APP" "$tag" || return 1
   fn-keycloak-set "$APP" build-hash "$build_hash"
   fn-keycloak-prune-images "$APP" "$tag"
 }

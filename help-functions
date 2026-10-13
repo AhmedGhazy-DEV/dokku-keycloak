@@ -39,6 +39,7 @@ fn-keycloak-help-content() {
     keycloak:list, List Keycloak instances
     keycloak:logs <name> [-t] [-n <lines>], Show the logs of a Keycloak instance
     keycloak:restart <name>, Restart a Keycloak instance
+    keycloak:upgrade <name> [--version <tag>] [--force], Back up the database, then move an instance to another Keycloak release
     keycloak:start <name>, Start a stopped Keycloak instance
     keycloak:stop <name>, Stop a running Keycloak instance
 help_content
