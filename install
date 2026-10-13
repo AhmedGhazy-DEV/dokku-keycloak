@@ -7,6 +7,12 @@ trigger-keycloak-install() {
   declare desc="prepares the property store and the data directory for backups"
   declare trigger="install"
 
+  local version
+  version="$(dokku_version | awk '{print $NF}' | sed 's/^v//')"
+  if [[ "$(printf '%s\n' "$KEYCLOAK_MIN_DOKKU_VERSION" "$version" | sort -V | head -n1)" != "$KEYCLOAK_MIN_DOKKU_VERSION" ]]; then
+    dokku_log_fail "The keycloak plugin needs Dokku $KEYCLOAK_MIN_DOKKU_VERSION or newer (found $version)"
+  fi
+
   fn-plugin-property-setup "$KEYCLOAK_PLUGIN_NAME"
   mkdir -p "$KEYCLOAK_DATA_ROOT"
   chown "${DOKKU_SYSTEM_USER:-dokku}:${DOKKU_SYSTEM_GROUP:-dokku}" "$KEYCLOAK_DATA_ROOT"

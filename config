@@ -4,6 +4,10 @@
 
 export KEYCLOAK_PLUGIN_NAME="keycloak"
 
+# Oldest Dokku the full test suite passes on. 0.35 fails the first deploy:
+# it does not retry a healthcheck that answers 503 while Keycloak starts.
+export KEYCLOAK_MIN_DOKKU_VERSION="0.36.0"
+
 # Keycloak release used for new instances; bumped only after it passes the
 # full lifecycle test suite.
 export KEYCLOAK_DEFAULT_VERSION="26.8.1"
