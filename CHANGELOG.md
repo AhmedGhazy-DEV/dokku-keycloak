@@ -30,4 +30,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suites (bats) and a GitHub Actions workflow running them against
   Dokku in Docker.
 
-[Unreleased]: https://github.com/shebanglabs/dokku-keycloak/commits/main
+[Unreleased]: https://github.com/shebang-labs/dokku-keycloak/commits/main

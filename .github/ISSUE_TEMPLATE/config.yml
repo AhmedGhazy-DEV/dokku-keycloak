@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/shebanglabs/dokku-keycloak/security/advisories/new
+    url: https://github.com/shebang-labs/dokku-keycloak/security/advisories/new
     about: Please report security issues privately, never in a public issue.
   - name: Keycloak questions
     url: https://www.keycloak.org/community

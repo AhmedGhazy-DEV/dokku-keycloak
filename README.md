@@ -1,6 +1,6 @@
 # dokku-keycloak
 
-[![CI](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml/badge.svg)](https://github.com/shebanglabs/dokku-keycloak/actions/workflows/ci.yml)
+[![CI](https://github.com/shebang-labs/dokku-keycloak/actions/workflows/ci.yml/badge.svg)](https://github.com/shebang-labs/dokku-keycloak/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A [Dokku](https://dokku.com) plugin that provisions and manages
@@ -10,7 +10,7 @@ hostname and proxy settings, Let's Encrypt TLS, realm export and import, and
 upgrades that back up the database first.
 
 ```sh
-sudo dokku plugin:install https://github.com/shebanglabs/dokku-keycloak.git keycloak
+sudo dokku plugin:install https://github.com/shebang-labs/dokku-keycloak.git keycloak
 dokku keycloak:create auth
 dokku keycloak:domains:set auth auth.example.com
 dokku keycloak:letsencrypt auth --email ops@example.com
@@ -90,13 +90,13 @@ on a real server:
 ```sh
 sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres
 sudo dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git letsencrypt
-sudo dokku plugin:install https://github.com/shebanglabs/dokku-keycloak.git keycloak
+sudo dokku plugin:install https://github.com/shebang-labs/dokku-keycloak.git keycloak
 ```
 
 To pin a release of the plugin:
 
 ```sh
-sudo dokku plugin:install https://github.com/shebanglabs/dokku-keycloak.git --committish v0.1.0 --name keycloak
+sudo dokku plugin:install https://github.com/shebang-labs/dokku-keycloak.git --committish v0.1.0 --name keycloak
 ```
 
 To update the plugin later, run `sudo dokku plugin:update keycloak`.
