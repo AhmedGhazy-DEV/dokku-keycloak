@@ -35,7 +35,7 @@ fn-keycloak-help-content() {
     keycloak:export <name> [<realm>], Export one realm (or all) as JSON on stdout
     keycloak:import <name> <file|-> [--override], Import realms from a JSON export and restart
     keycloak:info <name>, Show details about a Keycloak instance
-    keycloak:letsencrypt <name> [--email <email>], Enable Let's Encrypt TLS for an instance
+    keycloak:letsencrypt <name> [--email <email>] [--force], Enable Let's Encrypt TLS (--force replaces a still-valid certificate)
     keycloak:list, List Keycloak instances
     keycloak:logs <name> [-t] [-n <lines>], Show the logs of a Keycloak instance
     keycloak:restart <name>, Restart an instance (rebuilding if build-time options changed)
