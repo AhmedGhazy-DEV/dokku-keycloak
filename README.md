@@ -60,14 +60,27 @@ Maintained by [Shebang Labs](https://shebanglabs.io).
 | Requirement          | Version / notes                                                                 |
 | -------------------- | ------------------------------------------------------------------------------- |
 | Dokku                | **0.36.0 or newer** (tested on 0.36.0 and 0.38.31)                              |
-| Host OS              | Any Dokku-supported Ubuntu or Debian release                                    |
+| Host OS              | Ubuntu 24.04 tested; other Dokku-supported Ubuntu and Debian releases should work |
 | Memory               | 2 GB per instance by default, plus PostgreSQL and the host (4 GB host minimum)  |
 | dokku-postgres       | Required. `sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres` |
 | dokku-letsencrypt    | Required for `keycloak:letsencrypt`. `sudo dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git letsencrypt` |
-| Keycloak             | 26.0.0 or newer. The default is **26.8.1**.                                     |
+| Keycloak             | **26.8.1** by default; 26.8.0 also tested. Other 26.x releases are accepted but untested. |
 
 The plugin never installs other plugins for you. If one is missing, the
 command that needs it fails and prints the exact install command.
+
+### Verification status
+
+Every command is covered by the test suites, which pass on Dokku 0.36.0 and
+0.38.31 running on Ubuntu 24.04 (arm64). Two things are **not yet verified**
+on a real server:
+
+- **Let's Encrypt issuance.** The `keycloak:letsencrypt` checks and error
+  handling are tested, and TLS behind Dokku's nginx is tested with a
+  self-signed certificate. A real certificate from Let's Encrypt has not been
+  requested yet.
+- **x86_64 hosts.** All testing so far ran on arm64. The plugin is plain Bash
+  and the Keycloak image is multi-architecture, so no difference is expected.
 
 ## Installation
 
