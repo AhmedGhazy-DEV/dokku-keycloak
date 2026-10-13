@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+trigger-keycloak-install() {
+  declare desc="prepares the plugin property store"
+  declare trigger="install"
+
+  fn-plugin-property-setup "$KEYCLOAK_PLUGIN_NAME"
+}
+
+trigger-keycloak-install "$@"

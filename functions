@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/config"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+fn-keycloak-exists() {
+  declare desc="returns 0 when the app is a Keycloak instance managed by this plugin"
+  declare APP="$1"
+  fn-plugin-property-exists "$KEYCLOAK_PLUGIN_NAME" "$APP" "version"
+}
+
+fn-keycloak-get() {
+  declare desc="reads a plugin property for an instance"
+  declare APP="$1" KEY="$2" DEFAULT="$3"
+  fn-plugin-property-get "$KEYCLOAK_PLUGIN_NAME" "$APP" "$KEY" "$DEFAULT"
+}
+
+fn-keycloak-set() {
+  declare desc="writes a plugin property for an instance"
+  declare APP="$1" KEY="$2" VALUE="$3"
+  fn-plugin-property-write "$KEYCLOAK_PLUGIN_NAME" "$APP" "$KEY" "$VALUE"
+}
+
+verify_keycloak_name() {
+  declare desc="fails unless the name is valid and belongs to an existing instance"
+  declare APP="$1"
+
+  [[ -n "$APP" ]] || dokku_log_fail "Please specify a Keycloak instance name"
+  is_valid_app_name "$APP"
+  fn-keycloak-exists "$APP" || DOKKU_FAIL_EXIT_CODE=20 dokku_log_fail "Keycloak instance $APP does not exist"
+}
+
+fn-keycloak-plugin-install-hint() {
+  declare desc="prints the command that installs a required plugin"
+  declare PLUGIN="$1"
+  echo "sudo dokku plugin:install https://github.com/dokku/dokku-${PLUGIN}.git ${PLUGIN}"
+}
+
+fn-keycloak-missing-plugins() {
+  declare desc="lists required plugins that are not enabled, with install hints"
+  local plugin
+  for plugin in postgres letsencrypt; do
+    [[ -d "$PLUGIN_ENABLED_PATH/$plugin" ]] || echo "$plugin ($(fn-keycloak-plugin-install-hint "$plugin"))"
+  done
+}
+
+fn-keycloak-require-plugin() {
+  declare desc="fails with an install hint unless the given plugin is enabled"
+  declare PLUGIN="$1"
+  [[ -d "$PLUGIN_ENABLED_PATH/$PLUGIN" ]] || dokku_log_fail "The $PLUGIN plugin is required. Install it with: $(fn-keycloak-plugin-install-hint "$PLUGIN")"
+}

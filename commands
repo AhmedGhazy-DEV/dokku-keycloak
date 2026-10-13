@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# dokku runs every plugin's commands script for any command it cannot map to a
+# subcommand file, so bow out early for anything that is not our help.
+[[ " help keycloak keycloak:help " == *" $1 "* ]] || exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/help-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-help "$@"

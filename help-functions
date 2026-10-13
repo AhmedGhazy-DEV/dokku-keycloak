@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-help() {
+  declare desc="help command"
+  declare CMD="$1"
+  local plugin_name="keycloak"
+  local plugin_description="Manage Keycloak instances backed by PostgreSQL"
+
+  if [[ "$CMD" == "${plugin_name}:help" ]] || [[ "$CMD" == "$plugin_name" ]]; then
+    echo "Usage: dokku ${plugin_name}[:COMMAND]"
+    echo ''
+    echo "$plugin_description"
+    echo ''
+    echo 'Additional commands:'
+    fn-keycloak-help-content | sort | column -c2 -t -s,
+  elif [[ $(ps -o command= $PPID) == *"--all"* ]]; then
+    fn-keycloak-help-content
+  else
+    echo "    $plugin_name, $plugin_description"
+  fi
+}
+
+fn-keycloak-help-content() {
+  declare desc="return help content"
+  cat <<help_content
+help_content
+}
