@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-export() {
+  declare desc="exports one realm, or all realms, as JSON on stdout"
+  declare cmd="keycloak:export"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1" REALM="$2"
+
+  verify_keycloak_name "$APP"
+  [[ -z "$REALM" ]] || fn-keycloak-validate-realm "$REALM"
+
+  # Keycloak's own output goes to stderr so stdout is only the JSON, and
+  # stdin is closed so a calling script's input is not swallowed.
+  dokku_log_info1 "Exporting ${REALM:-all realms} from $APP" >&2
+  # shellcheck disable=SC2016 # expanded by the container's shell
+  fn-keycloak-oneoff "$APP" '
+    set -e
+    /opt/keycloak/bin/kc.sh export --optimized --file /tmp/export.json ${1:+--realm "$1"} >&2
+    cat /tmp/export.json
+  ' "$REALM" </dev/null || dokku_log_fail "Export failed; see the Keycloak output above"
+}
+
+cmd-keycloak-export "$@"

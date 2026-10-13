@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-import() {
+  declare desc="imports realms from a JSON export (file or stdin)"
+  declare cmd="keycloak:import"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" FILE="" OVERRIDE=false
+  local arg
+
+  for arg in "$@"; do
+    case "$arg" in
+      --override) OVERRIDE=true ;;
+      -) FILE="-" ;;
+      -*) dokku_log_fail "Unknown flag: $arg" ;;
+      *)
+        if [[ -z "$APP" ]]; then
+          APP="$arg"
+        else
+          FILE="$arg"
+        fi
+        ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  [[ -n "$FILE" ]] || dokku_log_fail "Please specify a JSON file, or - to read from stdin"
+  [[ "$FILE" == "-" ]] || [[ -r "$FILE" ]] || dokku_log_fail "Cannot read $FILE"
+  [[ "$FILE" != "-" ]] || [[ ! -t 0 ]] || dokku_log_fail "Expected the realm JSON on stdin"
+
+  # Existing realms are skipped unless --override, which replaces them.
+  dokku_log_info1 "Importing realms into $APP${OVERRIDE/#true/ (replacing existing realms)}"
+  [[ "$OVERRIDE" == "true" ]] || dokku_log_verbose "Existing realms are left untouched; use --override to replace them"
+  [[ "$FILE" == "-" ]] || exec <"$FILE"
+  # shellcheck disable=SC2016 # expanded by the container's shell
+  fn-keycloak-oneoff "$APP" '
+    set -e
+    cat >/tmp/import.json
+    /opt/keycloak/bin/kc.sh import --optimized --file /tmp/import.json --override "$1"
+  ' "$OVERRIDE" || dokku_log_fail "Import failed; see the Keycloak output above"
+
+  # The running node caches realms, so it must restart to see the import.
+  dokku ps:restart "$APP"
+}
+
+cmd-keycloak-import "$@"
