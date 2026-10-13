@@ -181,15 +181,19 @@ fn-keycloak-oneoff() {
 
   # dokku run only attaches stdin when there is a TTY, so a detached
   # container (same image, env and database link) is driven via docker exec.
-  # The TTL makes Dokku reap it even if this command is interrupted.
-  container="$(dokku run:detached --ttl-seconds 3600 "$APP" /bin/sleep 3600 2>/dev/null | tail -n1)"
+  # It sleeps rather than exits so it outlives the exec, and its own timeout
+  # bounds its life even if the trap below never runs.
+  container="$(dokku run:detached "$APP" /bin/sleep 3600 2>/dev/null | tail -n1)"
   [[ -n "$container" ]] || dokku_log_fail "Could not start a one-off container for $APP"
+  # shellcheck disable=SC2064 # the name is fixed now, on purpose
+  trap "'$DOCKER_BIN' container rm -f '$container' >/dev/null 2>&1 || true" EXIT INT TERM
 
   # The entrypoint maps DATABASE_URL to KC_DB_*. KC_CACHE=local keeps the
   # one-off Keycloak from joining the running node's cluster.
   "$DOCKER_BIN" container exec -i --env KC_CACHE=local "$container" \
     /opt/keycloak/bin/dokku-entrypoint.sh /bin/bash -c "$SCRIPT" keycloak "$@" || status=$?
   "$DOCKER_BIN" container rm -f "$container" >/dev/null 2>&1 || true
+  trap - EXIT INT TERM
   return "$status"
 }
 
