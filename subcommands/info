@@ -18,6 +18,7 @@ cmd-keycloak-info() {
   fn-keycloak-info-row "Created" "$(fn-keycloak-get "$APP" created false)"
   fn-keycloak-info-row "Running" "$(dokku ps:report "$APP" --running 2>/dev/null || echo false)"
   fn-keycloak-info-row "Database" "$(fn-keycloak-get "$APP" database)"
+  fn-keycloak-info-row "Network" "$(fn-keycloak-get "$APP" network)"
   fn-keycloak-info-row "Memory limit" "$(fn-keycloak-get "$APP" memory)"
   fn-keycloak-info-row "Hostname" "$(dokku config:get "$APP" KC_HOSTNAME || true)"
   fn-keycloak-info-row "URL" "$url"
