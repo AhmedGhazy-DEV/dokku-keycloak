@@ -27,7 +27,10 @@ body:
     id: output
     attributes:
       label: Command output
-      description: Re-run the failing command with `dokku --trace` if you can.
+      description: >-
+        Paste the output of the failing command. Do not paste `dokku --trace`
+        output unless asked: it prints configuration values, including the
+        admin and database passwords.
       render: shell
   - type: input
     id: plugin-version
