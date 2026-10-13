@@ -309,7 +309,14 @@ removes `/health/ready`, which the deploy healthcheck relies on.
 
 ### Host-wide settings
 
-Set these in the `dokku` user's environment (for example `/etc/environment`):
+Set these in a file under `/home/dokku/.dokkurc/`, which Dokku reads before
+every command:
+
+```sh
+echo 'export KEYCLOAK_IMAGE_REPO=registry.example.com/keycloak/keycloak' | sudo tee /home/dokku/.dokkurc/keycloak
+sudo chown dokku:dokku /home/dokku/.dokkurc/keycloak
+```
+
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
