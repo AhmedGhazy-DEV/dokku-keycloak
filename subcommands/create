@@ -78,7 +78,7 @@ cmd-keycloak-create() {
   dokku ports:set "$APP" http:80:8080
   dokku resource:limit --memory "$(fn-keycloak-get "$APP" memory)" "$APP" >/dev/null
 
-  fn-keycloak-deploy "$APP"
+  fn-keycloak-apply "$APP"
 
   # The deploy healthcheck waits for readiness, which happens after the admin
   # user is created, so the password is no longer needed. The restart (zero
