@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Constants shared by every command. Values marked overridable can be set in
+# /etc/environment or the dokku user's environment on the host.
+
+export KEYCLOAK_PLUGIN_NAME="keycloak"
+
+# Keycloak release used for new instances; bumped only after it passes the
+# full lifecycle test suite.
+export KEYCLOAK_DEFAULT_VERSION="26.8.1"
+
+# overridable: mirror of quay.io/keycloak/keycloak for air-gapped hosts
+export KEYCLOAK_IMAGE_REPO="${KEYCLOAK_IMAGE_REPO:-quay.io/keycloak/keycloak}"
+
+# Memory limit applied to new instances. Keycloak sizes its heap from the
+# container limit (70% by default), so this is the main tuning knob.
+export KEYCLOAK_DEFAULT_MEMORY="2048m"
+
+export KEYCLOAK_ADMIN_USER="admin"

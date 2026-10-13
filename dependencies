@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+trigger-keycloak-dependencies() {
+  declare desc="warns about required plugins that are missing"
+  declare trigger="dependencies"
+
+  # Other plugins are never installed from here: plugin:install runs code from
+  # the network as root, and that should be an explicit operator decision.
+  fn-keycloak-missing-plugins | while read -r line; do
+    dokku_log_warn "keycloak requires a plugin that is not installed: $line"
+  done
+}
+
+trigger-keycloak-dependencies "$@"
