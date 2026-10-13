@@ -43,7 +43,8 @@ Maintained by [Shebang Labs](https://shebanglabs.io).
   built with PostgreSQL, health and metrics baked in. The embedded H2 database
   is never used.
 - **Safe admin bootstrap.** A random 48-character admin password is generated
-  and stored with mode `0600`. It is passed to Keycloak for the first boot only.
+  and stored with mode `0600`. It is handed to Keycloak once, on stdin, and is
+  never part of the app's config or a container's environment.
 - **Correct behind Dokku's nginx.** `KC_PROXY_HEADERS=xforwarded`, a pinned
   hostname, and TLS through
   [dokku-letsencrypt](https://github.com/dokku/dokku-letsencrypt). Health and
@@ -172,7 +173,8 @@ This command:
 - creates the app `<name>` and the PostgreSQL service `<name>-db`, and links them
 - applies the defaults listed under [Configuration](#configuration)
 - builds the optimized image and deploys it
-- removes the bootstrap credentials from the environment once Keycloak is ready
+- creates the temporary admin user with `kc.sh bootstrap-admin` in a one-off
+  container, passing the password on stdin
 
 `--memory` takes Docker's format (`2048m`, `3g`). Keycloak sizes its Java
 heap from this limit.

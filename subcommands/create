@@ -72,14 +72,10 @@ cmd-keycloak-create() {
     dokku postgres:link --no-restart "$database" "$APP" >/dev/null
   fi
 
-  # Output is discarded because config:set echoes values, including the
-  # bootstrap password. The bootstrap variables are removed after first boot.
   dokku config:set --no-restart "$APP" \
     KC_PROXY_HEADERS=xforwarded \
     KC_HTTP_ENABLED=true \
-    KC_HOSTNAME_STRICT=false \
-    KC_BOOTSTRAP_ADMIN_USERNAME="$KEYCLOAK_ADMIN_USER" \
-    KC_BOOTSTRAP_ADMIN_PASSWORD="$(fn-keycloak-get "$APP" admin-password)" >/dev/null
+    KC_HOSTNAME_STRICT=false >/dev/null
 
   # Only the HTTP listener is published; the management port (health and
   # metrics) stays reachable from the host and other containers only.
@@ -90,17 +86,32 @@ cmd-keycloak-create() {
   dokku resource:limit --memory "$(fn-keycloak-get "$APP" memory)" "$APP" >/dev/null
 
   fn-keycloak-apply "$APP"
-
-  # The deploy healthcheck waits for readiness, which happens after the admin
-  # user is created, so the password is no longer needed. The restart (zero
-  # downtime, healthchecked) drops it from the running container's env too.
-  dokku config:unset --no-restart "$APP" KC_BOOTSTRAP_ADMIN_USERNAME KC_BOOTSTRAP_ADMIN_PASSWORD >/dev/null
-  dokku ps:restart "$APP"
+  fn-keycloak-bootstrap-admin "$APP"
   fn-keycloak-set "$APP" created true
 
   dokku_log_info1 "Keycloak instance $APP is ready"
   dokku_log_verbose "Admin console: $(dokku url "$APP")/admin/"
   dokku_log_verbose "Credentials:   dokku keycloak:admin-credentials $APP"
+}
+
+fn-keycloak-bootstrap-admin() {
+  declare desc="creates the temporary admin user once, without exposing its password"
+  declare APP="$1"
+
+  [[ "$(fn-keycloak-get "$APP" admin-created)" != "true" ]] || return 0
+  dokku_log_info1 "Creating the bootstrap admin user"
+  # The password reaches kc.sh on stdin, so it never appears in the app's
+  # config, in any container's settings, or in output. Until this runs,
+  # Keycloak only offers admin creation to requests from inside the container.
+  # shellcheck disable=SC2016 # expanded by the container's shell
+  fn-keycloak-get "$APP" admin-password | fn-keycloak-oneoff "$APP" '
+    set -e
+    IFS= read -r KC_BOOTSTRAP_ADMIN_PASSWORD
+    export KC_BOOTSTRAP_ADMIN_PASSWORD
+    /opt/keycloak/bin/kc.sh bootstrap-admin user --optimized --no-prompt \
+      --username "$1" --password:env KC_BOOTSTRAP_ADMIN_PASSWORD >&2
+  ' "$KEYCLOAK_ADMIN_USER" || dokku_log_fail "Creating the bootstrap admin user failed; re-run keycloak:create $APP"
+  fn-keycloak-set "$APP" admin-created true
 }
 
 cmd-keycloak-create "$@"
