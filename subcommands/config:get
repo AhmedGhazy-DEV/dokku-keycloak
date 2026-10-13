@@ -12,7 +12,7 @@ cmd-keycloak-config-get() {
   verify_keycloak_name "$APP"
   [[ -n "$KEY" ]] || dokku_log_fail "Please specify a key"
   fn-keycloak-validate-key "$KEY"
-  dokku config:keys "$APP" | grep -qx "$KEY" || dokku_log_fail "$KEY is not set on $APP"
+  fn-keycloak-has-config-key "$APP" "$KEY" || dokku_log_fail "$KEY is not set on $APP"
   dokku config:get "$APP" "$KEY"
 }
 

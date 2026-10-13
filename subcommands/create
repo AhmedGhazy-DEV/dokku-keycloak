@@ -84,8 +84,9 @@ cmd-keycloak-create() {
   # database is not on the default bridge. The service is reachable by the
   # same name on the private network. The link record (DATABASE_URL,
   # postgres:links, destroy protection) stays.
-  local link_option="--link dokku.postgres.$database:dokku-postgres-$database"
-  if dokku docker-options:report "$APP" | grep -qF -- "$link_option"; then
+  local link_option="--link dokku.postgres.$database:dokku-postgres-$database" docker_options
+  docker_options="$(dokku docker-options:report "$APP")"
+  if [[ "$docker_options" == *"$link_option"* ]]; then
     dokku docker-options:remove "$APP" build,deploy,run "$link_option" >/dev/null
   fi
 

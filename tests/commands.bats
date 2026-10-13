@@ -153,3 +153,22 @@ load test_helper
   refute_output_contains "Unknown flag"
   assert_output_contains "Keycloak instance does-not-exist does not exist"
 }
+
+@test "(functions) config key lookup is not fooled by SIGPIPE under pipefail" {
+  # a writer that keeps printing after the match makes 'cmd | grep -q' fail
+  # with SIGPIPE under pipefail; the helper must still find the key
+  run bash -c '
+    export PLUGIN_CORE_AVAILABLE_PATH="${PLUGIN_CORE_AVAILABLE_PATH:-/var/lib/dokku/core-plugins/available}"
+    export PLUGIN_ENABLED_PATH="${PLUGIN_ENABLED_PATH:-/var/lib/dokku/plugins/enabled}"
+    export DOKKU_LIB_ROOT="${DOKKU_LIB_ROOT:-/var/lib/dokku}"
+    source "$1/functions"
+    set -o pipefail
+    dokku() { echo KC_WANTED; seq 1 200000; }
+    fn-keycloak-has-config-key app KC_WANTED && echo found
+    dokku config:keys app | grep -qx KC_WANTED || echo "plain pipe fails too"
+  ' _ "$BATS_TEST_DIRNAME/.."
+  assert_success
+  assert_output_contains "found"
+  # proves the stub really triggers the failure the helper avoids
+  assert_output_contains "plain pipe fails too"
+}

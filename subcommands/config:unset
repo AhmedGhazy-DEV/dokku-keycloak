@@ -28,7 +28,7 @@ cmd-keycloak-config-unset() {
   [[ ${#keys[@]} -gt 0 ]] || dokku_log_fail "Please specify at least one key"
   for arg in "${keys[@]}"; do
     fn-keycloak-validate-key "$arg"
-    dokku config:keys "$APP" | grep -qx "$arg" && changed+=("$arg")
+    fn-keycloak-has-config-key "$APP" "$arg" && changed+=("$arg")
   done
 
   if [[ ${#changed[@]} -eq 0 ]]; then

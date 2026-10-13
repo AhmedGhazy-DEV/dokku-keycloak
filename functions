@@ -14,6 +14,16 @@ fn-keycloak-exists() {
   fn-plugin-property-exists "$KEYCLOAK_PLUGIN_NAME" "$APP" "version"
 }
 
+fn-keycloak-has-config-key() {
+  declare desc="returns 0 when the app has the config key set"
+  declare APP="$1" KEY="$2"
+  local keys
+  # captured first: piping into grep -q under pipefail fails at random when
+  # grep exits early and the writer gets SIGPIPE
+  keys="$(dokku config:keys "$APP")"
+  grep -qxF -- "$KEY" <<<"$keys"
+}
+
 fn-keycloak-get() {
   declare desc="reads a plugin property for an instance"
   declare APP="$1" KEY="$2" DEFAULT="$3"

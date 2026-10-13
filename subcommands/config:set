@@ -32,7 +32,7 @@ cmd-keycloak-config-set() {
   for arg in "${pairs[@]}"; do
     key="${arg%%=*}"
     if [[ "$(dokku config:get "$APP" "$key" 2>/dev/null || true)" != "${arg#*=}" ]] \
-      || ! dokku config:keys "$APP" | grep -qx "$key"; then
+      || ! fn-keycloak-has-config-key "$APP" "$key"; then
       changed+=("$key")
     fi
   done
