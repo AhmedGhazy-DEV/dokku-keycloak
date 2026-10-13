@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154 # status and output are set by bats' run
 # Shared helpers for the bats suites. Tests drive the real `dokku` binary, so
 # they must run on a Dokku host with this plugin installed.
 
