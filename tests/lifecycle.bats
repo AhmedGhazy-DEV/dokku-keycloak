@@ -93,6 +93,11 @@ teardown_file() {
   [[ "$output" == "404" ]]
 }
 
+@test "(e2e) create deploys exactly once" {
+  run grep -c "Application deployed" "$BATS_FILE_TMPDIR/create.log"
+  [[ "$output" == "1" ]]
+}
+
 @test "(e2e) Keycloak runs as PID 1 so shutdown signals reach it" {
   run cat "$BATS_FILE_TMPDIR/create.log"
   refute_output_contains "not PID 1"
