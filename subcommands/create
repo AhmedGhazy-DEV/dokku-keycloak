@@ -84,6 +84,9 @@ cmd-keycloak-create() {
   # Only the HTTP listener is published; the management port (health and
   # metrics) stays reachable from the host and other containers only.
   dokku ports:set "$APP" http:80:8080
+  # kc.sh forwards stop signals to Keycloak itself when it runs as PID 1,
+  # which is what Keycloak expects; Dokku's injected init would be PID 1.
+  dokku scheduler-docker-local:set "$APP" init-process false >/dev/null
   dokku resource:limit --memory "$(fn-keycloak-get "$APP" memory)" "$APP" >/dev/null
 
   fn-keycloak-apply "$APP"

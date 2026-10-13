@@ -93,6 +93,14 @@ teardown_file() {
   [[ "$output" == "404" ]]
 }
 
+@test "(e2e) Keycloak runs as PID 1 so shutdown signals reach it" {
+  run cat "$BATS_FILE_TMPDIR/create.log"
+  refute_output_contains "not PID 1"
+
+  run dokku scheduler-docker-local:report "$E2E_APP" --scheduler-docker-local-init-process
+  [[ "$output" == "false" ]]
+}
+
 @test "(e2e) creating the same instance again fails without side effects" {
   run dokku keycloak:create "$E2E_APP"
   assert_failure
