@@ -134,6 +134,26 @@ fn-keycloak-prune-images() {
   done
 }
 
+fn-keycloak-drop-db-link() {
+  declare desc="removes the docker link to the instance database, if anything added one"
+  declare APP="$1"
+  local database link_option docker_options
+
+  # postgres:link adds a docker link, and so would a re-link or a future
+  # dokku-postgres. The database is not on the default bridge, so with the
+  # link the next container fails to start; it resolves by the same name on
+  # the private network instead. The link record (DATABASE_URL,
+  # postgres:links, destroy protection) is kept.
+  database="$(fn-keycloak-get "$APP" database)"
+  link_option="--link dokku.postgres.$database:dokku-postgres-$database"
+  # captured first, see fn-keycloak-has-config-key
+  docker_options="$(dokku docker-options:report "$APP")"
+  [[ "$docker_options" == *"$link_option"* ]] || return 0
+  # instances from before the private network still rely on the link
+  [[ -n "$(fn-keycloak-get "$APP" network)" ]] || return 0
+  dokku docker-options:remove "$APP" build,deploy,run "$link_option" >/dev/null
+}
+
 fn-keycloak-apply() {
   declare desc="rebuilds and deploys an instance if its build inputs changed, otherwise restarts it"
   declare APP="$1"
@@ -142,6 +162,7 @@ fn-keycloak-apply() {
   # Runtime-only changes cost a restart; version or build-time option
   # changes a rebuild and a healthchecked deploy.
   # Explicit returns: callers may run this where errexit is suspended.
+  fn-keycloak-drop-db-link "$APP" || return 1
   build_hash="$(fn-keycloak-build-hash "$APP")" || return 1
   if [[ "$build_hash" == "$(fn-keycloak-get "$APP" build-hash)" ]]; then
     dokku ps:restart "$APP" || return 1

@@ -10,6 +10,7 @@ cmd-keycloak-start() {
   declare APP="$1"
 
   verify_keycloak_name "$APP"
+  fn-keycloak-drop-db-link "$APP"
   dokku ps:start "$APP"
 }
 
