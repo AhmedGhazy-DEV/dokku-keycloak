@@ -153,3 +153,21 @@ fn-keycloak-cleanup() {
   fn-plugin-property-destroy "$KEYCLOAK_PLUGIN_NAME" "$APP"
   fn-keycloak-prune-images "$APP" ""
 }
+
+fn-keycloak-validate-key() {
+  declare desc="fails unless the key is a Keycloak or JVM setting this plugin may change"
+  declare KEY="$1"
+  [[ "$KEY" =~ ^(KC_[A-Z0-9_]+|JAVA_OPTS[A-Z0-9_]*)$ ]] || dokku_log_fail "Invalid key $KEY: only KC_* and JAVA_OPTS* settings are managed here (use dokku config:set for anything else)"
+  [[ "$KEY" != "KC_DB" ]] || dokku_log_fail "KC_DB cannot be changed: instances are built for the linked PostgreSQL database"
+}
+
+fn-keycloak-apply-config() {
+  declare desc="applies changed settings unless the caller asked not to restart"
+  declare APP="$1" NO_RESTART="$2"
+
+  if [[ "$NO_RESTART" == "true" ]]; then
+    dokku_log_info1 "Skipping restart; run 'dokku keycloak:restart $APP' to apply"
+    return 0
+  fi
+  fn-keycloak-apply "$APP"
+}

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-config-set() {
+  declare desc="sets Keycloak settings and applies them"
+  declare cmd="keycloak:config:set"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" NO_RESTART=false
+  local arg key pairs=() changed=()
+
+  for arg in "$@"; do
+    case "$arg" in
+      --no-restart) NO_RESTART=true ;;
+      -*) dokku_log_fail "Unknown flag: $arg" ;;
+      *=*) pairs+=("$arg") ;;
+      *)
+        [[ -z "$APP" ]] || dokku_log_fail "Expected KEY=VALUE, got: $arg"
+        APP="$arg"
+        ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  [[ ${#pairs[@]} -gt 0 ]] || dokku_log_fail "Please specify at least one KEY=VALUE pair"
+
+  for arg in "${pairs[@]}"; do
+    key="${arg%%=*}"
+    fn-keycloak-validate-key "$key"
+  done
+  for arg in "${pairs[@]}"; do
+    key="${arg%%=*}"
+    if [[ "$(dokku config:get "$APP" "$key" 2>/dev/null || true)" != "${arg#*=}" ]] \
+      || ! dokku config:keys "$APP" | grep -qx "$key"; then
+      changed+=("$key")
+    fi
+  done
+
+  if [[ ${#changed[@]} -eq 0 ]]; then
+    dokku_log_info1 "No changes"
+    return 0
+  fi
+
+  # config:set echoes values, which may be secrets, so only keys are shown.
+  dokku_log_info1 "Setting ${changed[*]}"
+  dokku config:set --no-restart "$APP" "${pairs[@]}" >/dev/null
+  fn-keycloak-apply-config "$APP" "$NO_RESTART"
+}
+
+cmd-keycloak-config-set "$@"

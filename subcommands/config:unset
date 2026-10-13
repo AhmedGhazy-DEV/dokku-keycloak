@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-config-unset() {
+  declare desc="removes Keycloak settings and applies the change"
+  declare cmd="keycloak:config:unset"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" NO_RESTART=false
+  local arg keys=() changed=()
+
+  for arg in "$@"; do
+    case "$arg" in
+      --no-restart) NO_RESTART=true ;;
+      -*) dokku_log_fail "Unknown flag: $arg" ;;
+      *)
+        if [[ -z "$APP" ]]; then
+          APP="$arg"
+        else
+          keys+=("$arg")
+        fi
+        ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  [[ ${#keys[@]} -gt 0 ]] || dokku_log_fail "Please specify at least one key"
+  for arg in "${keys[@]}"; do
+    fn-keycloak-validate-key "$arg"
+    dokku config:keys "$APP" | grep -qx "$arg" && changed+=("$arg")
+  done
+
+  if [[ ${#changed[@]} -eq 0 ]]; then
+    dokku_log_info1 "No changes"
+    return 0
+  fi
+
+  dokku_log_info1 "Unsetting ${changed[*]}"
+  dokku config:unset --no-restart "$APP" "${changed[@]}" >/dev/null
+  fn-keycloak-apply-config "$APP" "$NO_RESTART"
+}
+
+cmd-keycloak-config-unset "$@"

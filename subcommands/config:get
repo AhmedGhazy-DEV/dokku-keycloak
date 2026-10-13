@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-config-get() {
+  declare desc="prints one Keycloak setting"
+  declare cmd="keycloak:config:get"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="$1" KEY="$2"
+
+  verify_keycloak_name "$APP"
+  [[ -n "$KEY" ]] || dokku_log_fail "Please specify a key"
+  fn-keycloak-validate-key "$KEY"
+  dokku config:keys "$APP" | grep -qx "$KEY" || dokku_log_fail "$KEY is not set on $APP"
+  dokku config:get "$APP" "$KEY"
+}
+
+cmd-keycloak-config-get "$@"
