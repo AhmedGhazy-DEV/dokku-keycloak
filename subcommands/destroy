@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+source "$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-keycloak-destroy() {
+  declare desc="destroys a Keycloak instance and its database"
+  declare cmd="keycloak:destroy"
+  [[ "$1" == "$cmd" ]] && shift 1
+  declare APP="" FORCE="${DOKKU_APPS_FORCE_DELETE:-}"
+  local arg database answer
+
+  for arg in "$@"; do
+    case "$arg" in
+      -f | --force) FORCE=1 ;;
+      -*) dokku_log_fail "Unknown flag: $arg" ;;
+      *) APP="$arg" ;;
+    esac
+  done
+
+  verify_keycloak_name "$APP"
+  database="$(fn-keycloak-get "$APP" database)"
+
+  if [[ -z "$FORCE" ]]; then
+    dokku_log_warn "WARNING: Potentially Destructive Action"
+    dokku_log_warn "This deletes Keycloak instance $APP and its database $database, including every realm and user."
+    dokku_log_warn "To proceed, type \"$APP\""
+    echo ""
+    read -rp "> " answer
+    [[ "$answer" == "$APP" ]] || dokku_log_fail "Confirmation did not match $APP. Aborted."
+  fi
+
+  dokku_log_info1 "Destroying Keycloak instance $APP"
+  # Each step checks first, so an interrupted destroy can simply be re-run.
+  if dokku postgres:exists "$database" >/dev/null 2>&1; then
+    if dokku postgres:linked "$database" "$APP" >/dev/null 2>&1; then
+      dokku postgres:unlink --no-restart "$database" "$APP"
+    fi
+    dokku postgres:destroy --force "$database"
+  fi
+  if dokku apps:exists "$APP" >/dev/null 2>&1; then
+    dokku --force apps:destroy "$APP"
+  fi
+  fn-keycloak-cleanup "$APP"
+  dokku_log_info1 "Keycloak instance $APP destroyed"
+}
+
+cmd-keycloak-destroy "$@"

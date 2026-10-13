@@ -26,7 +26,12 @@ fn-keycloak-help-content() {
   declare desc="return help content"
   cat <<help_content
     keycloak:create <name> [--version <tag>] [--memory <limit>], Create a Keycloak instance with its own PostgreSQL database
+    keycloak:destroy <name> [--force], Destroy a Keycloak instance and its database
     keycloak:info <name>, Show details about a Keycloak instance
     keycloak:list, List Keycloak instances
+    keycloak:logs <name> [-t] [-n <lines>], Show the logs of a Keycloak instance
+    keycloak:restart <name>, Restart a Keycloak instance
+    keycloak:start <name>, Start a stopped Keycloak instance
+    keycloak:stop <name>, Stop a running Keycloak instance
 help_content
 }
