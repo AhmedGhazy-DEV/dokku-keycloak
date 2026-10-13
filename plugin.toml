@@ -1,0 +1,4 @@
+[plugin]
+description = "dokku keycloak plugin: provision and manage Keycloak backed by PostgreSQL"
+version = "0.1.0"
+[plugin.config]
