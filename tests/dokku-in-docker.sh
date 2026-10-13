@@ -31,5 +31,7 @@ docker exec "$NAME" bash -c 'apt-get update -qq && apt-get install -y -qq bats c
 docker exec "$NAME" dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres
 docker exec "$NAME" dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git letsencrypt
 docker cp "$ROOT" "$NAME:/tmp/dokku-keycloak"
+# docker cp keeps host ownership, which git refuses to clone from
+docker exec "$NAME" git config --system --add safe.directory '*'
 docker exec "$NAME" dokku plugin:install file:///tmp/dokku-keycloak keycloak
 docker exec "$NAME" dokku plugin:list
