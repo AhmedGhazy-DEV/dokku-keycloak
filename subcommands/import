@@ -27,7 +27,9 @@ cmd-keycloak-import() {
 
   verify_keycloak_name "$APP"
   [[ -n "$FILE" ]] || dokku_log_fail "Please specify a JSON file, or - to read from stdin"
-  [[ "$FILE" == "-" ]] || [[ -r "$FILE" ]] || dokku_log_fail "Cannot read $FILE"
+  # Commands run as the dokku user, which cannot read files private to root
+  # or other users; streaming through stdin always works, also over ssh.
+  [[ "$FILE" == "-" ]] || [[ -r "$FILE" ]] || dokku_log_fail "Cannot read $FILE as the dokku user. Stream it instead: dokku keycloak:import $APP - < $FILE"
   [[ "$FILE" != "-" ]] || [[ ! -t 0 ]] || dokku_log_fail "Expected the realm JSON on stdin"
 
   # Existing realms are skipped unless --override, which replaces them.
