@@ -61,12 +61,15 @@ cmd-keycloak-create() {
   database="$(fn-keycloak-get "$APP" database)"
   network="$(fn-keycloak-get "$APP" network "keycloak-${APP//./-}")"
 
-  # Keycloak and its database share a private network: postgres:link then
-  # works without links on Docker's default bridge, which are deprecated.
+  # Keycloak reaches its database over a private network instead of a docker
+  # link: links on the default bridge are deprecated. The app keeps the
+  # default bridge as its first network, because Dokku's nginx and
+  # healthchecks use that address and, on Docker-based Dokku installs, cannot
+  # reach other networks.
   fn-keycloak-set "$APP" network "$network"
   dokku network:exists "$network" >/dev/null 2>&1 || dokku network:create "$network" >/dev/null
   dokku apps:exists "$APP" >/dev/null 2>&1 || dokku apps:create "$APP"
-  dokku network:set "$APP" initial-network "$network" >/dev/null
+  dokku network:set "$APP" attach-post-create "$network" >/dev/null
   # Both commands print the database URL, password included, on stdout;
   # errors still reach the user on stderr.
   if ! dokku postgres:exists "$database" >/dev/null 2>&1; then
@@ -76,6 +79,14 @@ cmd-keycloak-create() {
   if ! dokku postgres:linked "$database" "$APP" >/dev/null 2>&1; then
     dokku_log_info1 "Linking $database to $APP"
     dokku postgres:link --no-restart "$database" "$APP" >/dev/null
+  fi
+  # postgres:link also adds a docker link, which would fail now that the
+  # database is not on the default bridge. The service is reachable by the
+  # same name on the private network. The link record (DATABASE_URL,
+  # postgres:links, destroy protection) stays.
+  local link_option="--link dokku.postgres.$database:dokku-postgres-$database"
+  if dokku docker-options:report "$APP" | grep -qF -- "$link_option"; then
+    dokku docker-options:remove "$APP" build,deploy,run "$link_option" >/dev/null
   fi
 
   dokku config:set --no-restart "$APP" \
