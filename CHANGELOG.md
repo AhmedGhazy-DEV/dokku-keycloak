@@ -43,5 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its database, so Docker no longer warns about links on the default bridge.
 - Keycloak's deprecated sticky-session route is disabled, removing its
   startup warning.
+- Config commands no longer report a set key as missing at random, and
+  instances deploy on Docker-based Dokku installs and on Dokku 0.36.
 
 [Unreleased]: https://github.com/shebang-labs/dokku-keycloak/commits/main
