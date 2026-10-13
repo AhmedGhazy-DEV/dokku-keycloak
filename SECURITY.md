@@ -32,8 +32,9 @@ belongs, report it to us and we will help route it.
 ## What this plugin protects
 
 - The generated admin password is stored in Dokku's property store with
-  mode `0600`. It reaches Keycloak only for the first boot, after which it is
-  removed from the app config and the container is restarted without it.
+  mode `0600`. It reaches Keycloak once, on stdin to a one-off
+  `kc.sh bootstrap-admin` container, so it is never part of the app's
+  config, any container's environment, or command output.
 - No command except `keycloak:admin-credentials` prints a secret, and
   `keycloak:config:set` never echoes values.
 - Keycloak's management port (health and metrics) is not published through
