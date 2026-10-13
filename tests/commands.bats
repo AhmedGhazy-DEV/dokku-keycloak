@@ -89,7 +89,7 @@ load test_helper
 
 @test "(lifecycle) every instance command rejects an unknown instance" {
   local subcommand
-  for subcommand in start stop restart logs destroy; do
+  for subcommand in start stop restart logs destroy admin-credentials; do
     run dokku "keycloak:$subcommand" does-not-exist
     assert_failure
     assert_output_contains "Keycloak instance does-not-exist does not exist"
