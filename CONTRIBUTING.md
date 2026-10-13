@@ -76,7 +76,7 @@ sudo dokku plugin:install   # re-runs the install triggers
 
 [sslip.io](https://sslip.io) resolves any name that embeds an IP address to
 that address, so the VM IP gives you working domains with no DNS setup.
-With the VM at `192.0.2.10` (see `multipass list`):
+With the VM at, say, `192.0.2.10` (find yours with `multipass list`):
 
 ```sh
 dokku keycloak:create auth
