@@ -64,17 +64,26 @@ teardown_file() {
   assert_output_contains "Version:        $FROM_VERSION"
 }
 
+@test "(e2e) create never prints the database password" {
+  local db_password
+  db_password="$(dokku config:get "$E2E_APP" DATABASE_URL | sed 's#^[^:]*://[^:]*:\([^@]*\)@.*#\1#')"
+  [[ ${#db_password} -ge 8 ]]
+
+  run cat "$BATS_FILE_TMPDIR/create.log"
+  refute_output_contains_secret "$db_password"
+}
+
 @test "(e2e) the admin password never appears outside admin-credentials" {
   local password
   password="$(admin_password)"
   [[ ${#password} -ge 32 ]]
 
   run cat "$BATS_FILE_TMPDIR/create.log"
-  refute_output_contains "$password"
+  refute_output_contains_secret "$password"
   run dokku keycloak:info "$E2E_APP"
-  refute_output_contains "$password"
+  refute_output_contains_secret "$password"
   run dokku config:show "$E2E_APP"
-  refute_output_contains "$password"
+  refute_output_contains_secret "$password"
 }
 
 @test "(e2e) the admin can log in and the management port is not public" {

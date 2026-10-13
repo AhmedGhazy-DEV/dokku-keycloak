@@ -37,3 +37,14 @@ refute_output_contains() {
     return 1
   fi
 }
+
+# Like refute_output_contains, but never prints the secret it looked for:
+# test logs end up in public CI output.
+refute_output_contains_secret() {
+  if [[ "$output" == *"$1"* ]]; then
+    echo "output contains a secret (value withheld); lines:" >&2
+    grep -nF -- "$1" <<<"$output" | cut -d: -f1 | tr '\n' ' ' >&2
+    echo >&2
+    return 1
+  fi
+}
