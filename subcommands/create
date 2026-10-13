@@ -61,8 +61,16 @@ cmd-keycloak-create() {
   database="$(fn-keycloak-get "$APP" database)"
 
   dokku apps:exists "$APP" >/dev/null 2>&1 || dokku apps:create "$APP"
-  dokku postgres:exists "$database" >/dev/null 2>&1 || dokku postgres:create "$database"
-  dokku postgres:linked "$database" "$APP" >/dev/null 2>&1 || dokku postgres:link --no-restart "$database" "$APP"
+  # Both commands print the database URL, password included, on stdout;
+  # errors still reach the user on stderr.
+  if ! dokku postgres:exists "$database" >/dev/null 2>&1; then
+    dokku_log_info1 "Creating PostgreSQL service $database"
+    dokku postgres:create "$database" >/dev/null
+  fi
+  if ! dokku postgres:linked "$database" "$APP" >/dev/null 2>&1; then
+    dokku_log_info1 "Linking $database to $APP"
+    dokku postgres:link --no-restart "$database" "$APP" >/dev/null
+  fi
 
   # Output is discarded because config:set echoes values, including the
   # bootstrap password. The bootstrap variables are removed after first boot.
