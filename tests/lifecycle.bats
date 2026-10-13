@@ -104,6 +104,11 @@ teardown_file() {
   refute_output_contains "default bridge network are deprecated"
 }
 
+@test "(e2e) Keycloak starts without deprecation warnings for options we set" {
+  run cat "$BATS_FILE_TMPDIR/create.log"
+  refute_output_contains "shouldAttachRoute"
+}
+
 @test "(e2e) create deploys exactly once" {
   run grep -c "Application deployed" "$BATS_FILE_TMPDIR/create.log"
   [[ "$output" == "1" ]]
@@ -115,6 +120,37 @@ teardown_file() {
 
   run dokku scheduler-docker-local:report "$E2E_APP" --scheduler-docker-local-init-process
   [[ "$output" == "false" ]]
+}
+
+@test "(e2e) the admin console browser login works end to end" {
+  local resolve base redirect verifier challenge page action location code
+  resolve="--resolve $(domain):80:127.0.0.1"
+  base="http://$(domain)"
+  redirect="$base/admin/master/console/"
+  # the admin console client requires PKCE
+  verifier="$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=\n')"
+  challenge="$(printf %s "$verifier" | openssl dgst -sha256 -binary | base64 | tr '+/' '-_' | tr -d '=\n')"
+  rm -f "$BATS_TEST_TMPDIR/jar"
+
+  # shellcheck disable=SC2086 # $resolve is two words on purpose
+  page="$(curl -s -L $resolve -c "$BATS_TEST_TMPDIR/jar" -b "$BATS_TEST_TMPDIR/jar" -G \
+    "$base/realms/master/protocol/openid-connect/auth" \
+    -d client_id=security-admin-console --data-urlencode "redirect_uri=$redirect" \
+    -d response_type=code -d scope=openid -d "code_challenge=$challenge" -d code_challenge_method=S256)"
+  action="$(grep -o 'action="[^"]*"' <<<"$page" | head -n1 | sed 's/action="//;s/"$//;s/&amp;/\&/g')"
+  [[ -n "$action" ]]
+
+  # shellcheck disable=SC2086
+  location="$(curl -s $resolve -o /dev/null -w '%{redirect_url}' -c "$BATS_TEST_TMPDIR/jar" -b "$BATS_TEST_TMPDIR/jar" \
+    "$action" -d username=admin --data-urlencode "password=$(admin_password)" -d credentialId=)"
+  code="$(sed -n 's/.*[?&#]code=\([^&]*\).*/\1/p' <<<"$location")"
+  [[ -n "$code" ]]
+
+  # shellcheck disable=SC2086
+  run curl -s $resolve "$base/realms/master/protocol/openid-connect/token" \
+    -d grant_type=authorization_code -d client_id=security-admin-console \
+    -d "code=$code" --data-urlencode "redirect_uri=$redirect" -d "code_verifier=$verifier"
+  assert_output_contains '"access_token"'
 }
 
 @test "(e2e) creating the same instance again fails without side effects" {
