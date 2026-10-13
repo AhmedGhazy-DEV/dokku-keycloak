@@ -52,8 +52,8 @@ sudo dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git letsenc
 sudo apt-get install -y shellcheck bats make
 ```
 
-Keycloak needs about 1.5 GB of memory per instance, so give the VM at least
-4 GB. The repository is mounted under `/opt` because the `dokku` user cannot
+Each instance is limited to 2 GB of memory by default, so give the VM at
+least 4 GB. The repository is mounted under `/opt` because the `dokku` user cannot
 read files in `/home/ubuntu`.
 
 ### 2. Install the plugin from your working copy
