@@ -1,3 +1,5 @@
-# Plugins source Dokku's own helpers from paths that only exist on a Dokku
-# host, so shellcheck cannot follow them.
-disable=SC1090,SC1091
+# SC1090/SC1091: plugins source Dokku's own helpers from paths that only exist
+# on a Dokku host, so shellcheck cannot follow them.
+# SC2034: Dokku's convention documents every function with an unused
+# `declare desc="..."` (and triggers with `declare trigger=...`).
+disable=SC1090,SC1091,SC2034
