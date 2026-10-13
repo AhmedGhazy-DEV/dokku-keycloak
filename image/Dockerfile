@@ -12,6 +12,11 @@ COPY build.env /tmp/build.env
 RUN set -a && . /tmp/build.env && set +a && /opt/keycloak/bin/kc.sh build
 
 FROM ${KEYCLOAK_IMAGE}
+# Dokku's nginx does not route by session, and Keycloak keeps sessions in its
+# shared cache and database, so the node route in the session cookie is not
+# needed. Keycloak deprecates the option and asks for it to be disabled.
+# Overridable with keycloak:config:set.
+ENV KC_SPI_STICKY_SESSION_ENCODER__INFINISPAN__SHOULD_ATTACH_ROUTE=false
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY docker-entrypoint.sh /opt/keycloak/bin/dokku-entrypoint.sh
 # Dokku reads app.json from the image WORKDIR for image deploys; upstream
