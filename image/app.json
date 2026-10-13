@@ -1,0 +1,18 @@
+{
+  "healthchecks": {
+    "web": [
+      {
+        "type": "startup",
+        "name": "keycloak ready",
+        "description": "Waits for Keycloak's readiness endpoint on the management port",
+        "path": "/health/ready",
+        "port": 9000,
+        "content": "UP",
+        "initialDelay": 5,
+        "wait": 5,
+        "timeout": 5,
+        "attempts": 60
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ lint:
 # Fast checks: argument handling and failure paths. Needs a Dokku host with
 # this plugin installed.
 test:
+	bats tests/entrypoint.bats
 	bats tests/commands.bats
 
 # Full lifecycle against a real Keycloak; takes several minutes.
