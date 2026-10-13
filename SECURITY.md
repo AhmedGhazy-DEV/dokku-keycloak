@@ -40,3 +40,11 @@ belongs, report it to us and we will help route it.
   nginx.
 - Pre-upgrade database backups are written with mode `0600` in a `0700`
   directory.
+
+## What it cannot protect
+
+- `dokku --trace` prints configuration values as commands run, including the
+  admin and database passwords. Treat trace output as secret.
+- Realm exports contain password hashes and client secrets.
+- Anyone with root, `docker` group or `dokku` user access on the host can read
+  every secret of every instance.
