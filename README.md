@@ -502,12 +502,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the local VM setup (sslip.io
 domains, self-signed TLS, Mailpit for email) and for how to run
 `make lint`, `make test` and `make test-e2e`.
 
-## Credits
-
-Inspired by [cowofevil/keycloak-dokku](https://github.com/cowofevil/keycloak-dokku),
-which showed how to run Keycloak on Dokku with dokku-postgres and Let's
-Encrypt. This plugin is an independent implementation.
-
 ## License
 
 [MIT](LICENSE) © [Shebang Labs](https://shebanglabs.io)
