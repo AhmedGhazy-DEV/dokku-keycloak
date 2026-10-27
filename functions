@@ -113,6 +113,12 @@ fn-keycloak-providers() {
   return 0
 }
 
+fn-keycloak-validate-provider-name() {
+  declare desc="fails unless the name is a plain jar file name"
+  declare NAME="$1"
+  [[ "$NAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.jar$ ]] || dokku_log_fail "Invalid provider file name: $NAME (use letters, digits, dots, dashes and underscores, ending in .jar)"
+}
+
 fn-keycloak-build-hash() {
   declare desc="prints a hash of everything that goes into an instance's image"
   declare APP="$1"
